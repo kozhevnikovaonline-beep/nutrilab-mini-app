@@ -88,7 +88,7 @@ export interface TaskDef {
 }
 
 export const TASKS: readonly TaskDef[] = [
-  { id: 'quiz', kind: 'quiz', title: 'Пройти тест «Ваш ресурс»', reward: QUIZ_REWARD, emoji: '📝' },
+  { id: 'quiz', kind: 'quiz', title: 'Пройти тест «Что мешает вам чувствовать себя лучше?»', reward: QUIZ_REWARD, emoji: '📝' },
   { id: 'guide', kind: 'guide', title: 'Открыть гид «Энергия на тарелке»', reward: 200, emoji: '🎁' },
   { id: 'channel', kind: 'channel', title: 'Подписаться на канал NutriLab', reward: 300, emoji: '📣' },
   { id: 'referral', kind: 'referral', title: 'Пригласить подругу или друга', reward: 1_000, emoji: '🤝' },
@@ -226,7 +226,7 @@ export const PRODUCTS: readonly ProductDef[] = [
     subtitle: 'Онлайн · 45 минут',
     description:
       'Индивидуальная консультация основателя школы: разбор результатов теста, рациона и режима дня, план первых шагов.',
-    includes: ['45 минут онлайн', 'Разбор теста «Ваш ресурс»', 'План действий на 4 недели'],
+    includes: ['45 минут онлайн', 'Разбор ваших результатов теста', 'План действий на 4 недели'],
     price: 25_000,
     emoji: '👩‍⚕️',
     image: img('photo-1490645935967-10de6ba17061'),

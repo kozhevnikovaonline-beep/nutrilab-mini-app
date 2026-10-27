@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SCHOOL, TASKS, type TaskDef } from '@shared/catalog';
+import { QUIZ_TITLE } from '@shared/quiz';
 import type { UserState } from '@shared/types';
 import { useApp } from '../store/appStore';
 import { links } from '../lib/config';
@@ -46,7 +47,7 @@ export function TaskList() {
         setChannelVisited(true);
         break;
       case 'referral':
-        shareLink(links.referral(user.profile.id), `Проходи тест «Ваш ресурс» в ${SCHOOL.name} и получи гид «Энергия на тарелке» в подарок 🌿`);
+        shareLink(links.referral(user.profile.id), `Проходи тест «${QUIZ_TITLE}» в ${SCHOOL.name} и получи гид «Энергия на тарелке» в подарок 🌿`);
         break;
     }
   };

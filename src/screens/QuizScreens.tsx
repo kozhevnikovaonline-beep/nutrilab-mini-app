@@ -9,6 +9,7 @@ import {
   QUESTION_COUNT,
   QUIZ_BLOCKS,
   QUIZ_RESULTS,
+  QUIZ_DURATION,
   QUIZ_TITLE,
   QUIZ_WELCOME,
 } from '@shared/quiz';
@@ -86,9 +87,11 @@ export function QuizTab() {
         <h1 className="h1" style={{ marginTop: 16 }}>
           {QUIZ_TITLE}
         </h1>
+        <p className="muted" style={{ marginTop: 8 }}>
+          {QUIZ_DURATION}
+        </p>
         <div className="row" style={{ marginTop: 14, gap: 8, flexWrap: 'wrap' }}>
           <span className="pill pill--glass">25 вопросов</span>
-          <span className="pill pill--glass">3–5 минут</span>
           <span className="pill pill--glass">5 сфер</span>
         </div>
       </section>

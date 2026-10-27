@@ -1,6 +1,6 @@
 import { REFERRAL_REWARD, SCHOOL } from '@shared/catalog';
 import { currentLevel } from '@shared/game';
-import { MAX_SCORE } from '@shared/quiz';
+import { MAX_SCORE, QUIZ_TITLE } from '@shared/quiz';
 import { useApp } from '../store/appStore';
 import { api } from '../api';
 import { links } from '../lib/config';
@@ -22,7 +22,7 @@ export function ProfileScreen() {
   const level = currentLevel(game.totalEarned);
 
   const invite = () =>
-    shareLink(links.referral(profile.id), `Проходи тест «Ваш ресурс» в ${SCHOOL.name} и получи гид «Энергия на тарелке» в подарок 🌿`);
+    shareLink(links.referral(profile.id), `Проходи тест «${QUIZ_TITLE}» в ${SCHOOL.name} и получи гид «Энергия на тарелке» в подарок 🌿`);
 
   const reset = async () => {
     if (await confirmAction('Сбросить весь демо-прогресс: монеты, покупки и результат теста?')) await resetDemo();
@@ -77,7 +77,7 @@ export function ProfileScreen() {
         <button className="list-item" onClick={() => (quiz ? push({ name: 'quiz-result' }) : setTab('quiz'))}>
           <span className="list-item__icon">📝</span>
           <div className="list-item__body">
-            <div className="list-item__title">Тест «Ваш ресурс»</div>
+            <div className="list-item__title">Тест «{QUIZ_TITLE}»</div>
             <div className="list-item__sub">
               {quiz ? `${quiz.score}/${MAX_SCORE} · ${formatDate(quiz.completedAt)}` : 'Ещё не пройден'}
             </div>

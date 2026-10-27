@@ -45,7 +45,7 @@ export function GuideScreen() {
         <Empty
           emoji="🔒"
           title={`Гид «${GUIDE.title}» пока закрыт`}
-          text="Пройдите тест «Ваш ресурс» — гид соберётся по вашим ответам."
+          text="Пройдите тест «Что мешает вам чувствовать себя лучше?» — гид соберётся по вашим ответам."
           action={
             <button className="btn btn--primary" style={{ marginTop: 8 }} onClick={() => setTab('quiz')}>
               Пройти тест

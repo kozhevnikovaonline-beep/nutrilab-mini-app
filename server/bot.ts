@@ -1,5 +1,5 @@
 import { GUIDE, SCHOOL } from '../shared/catalog';
-import { FOLLOW_UPS, MAX_SCORE, QUIZ_BLOCKS, QUIZ_RESULTS, focusBlocks } from '../shared/quiz';
+import { FOLLOW_UPS, MAX_SCORE, QUIZ_BLOCKS, QUIZ_RESULTS, QUIZ_TITLE, focusBlocks } from '../shared/quiz';
 import type { UserState } from '../shared/types';
 import { config } from './config';
 import type { Db } from './db';
@@ -159,7 +159,7 @@ async function handleUpdate(db: Db, update: Update) {
         `🌿 <b>Добро пожаловать в ${SCHOOL.name}!</b>`,
         '',
         'Здесь вы можете:',
-        '• пройти тест «Ваш ресурс: что влияет на самочувствие?» — 25 вопросов, 3–5 минут;',
+        `• пройти тест «${QUIZ_TITLE}» — 25 вопросов, 1–3 минуты;`,
         `• получить персональный гид «${GUIDE.title}» в подарок;`,
         '• копить нутрики в тапалке и обменивать их на материалы, курсы и консультации школы.',
         '',
