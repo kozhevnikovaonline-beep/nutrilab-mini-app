@@ -105,7 +105,8 @@
 .course-card__prices {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 2px 8px;
   margin-top: auto;
   padding-top: 6px;
   font-variant-numeric: tabular-nums;

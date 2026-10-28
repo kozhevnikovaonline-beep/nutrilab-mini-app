@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { QUIZ_REWARD, SCHOOL } from '@shared/catalog';
-import { EXPERT_PHOTO } from '@shared/courses';
+import { EXPERT_PHOTO, courseLessonCount, findCourse } from '@shared/courses';
 import { useApp } from '../store/appStore';
 import { haptic } from '../telegram/webapp';
 import { Coin } from './Coin';
 import { Icon } from './Icon';
+import { formatCoins } from '../lib/format';
 
 // ───────────────────────── Приветственные слайды ─────────────────────────
 
@@ -94,18 +95,20 @@ function TapArt() {
 }
 
 function CoursesArt() {
+  const course = findCourse('course-mini')!;
+  const lessons = courseLessonCount(course);
   return (
     <div className="ob-art">
       <div className="ob-course ob-float">
         <div className="ob-course__img" />
-        <b>Мини-курс нутрициологии</b>
+        <b>{course.title}</b>
         <div className="chips" style={{ gap: 6 }}>
-          <span className="chip" style={{ height: 26, fontSize: 11 }}>2 310 учеников</span>
-          <span className="chip" style={{ height: 26, fontSize: 11 }}>10 уроков</span>
+          <span className="chip" style={{ height: 26, fontSize: 11 }}>{formatCoins(course.students)} учеников</span>
+          <span className="chip" style={{ height: 26, fontSize: 11 }}>{lessons} уроков</span>
         </div>
-        <div className="ob-course__btn">Купить за 7 990 ₽</div>
+        <div className="ob-course__btn">Купить за {formatCoins(course.priceRub)} ₽</div>
         <div className="ob-course__btn ob-course__btn--soft">
-          <Coin size={14} /> или 60 000 нутриков
+          <Coin size={14} /> или {formatCoins(course.priceCoins)} нутриков
         </div>
       </div>
       <img className="ob-avatar ob-float" src={EXPERT_PHOTO} alt="" />

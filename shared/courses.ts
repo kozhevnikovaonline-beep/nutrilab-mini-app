@@ -39,7 +39,7 @@ export interface CourseDef {
   outcomes: string[];
   forWhom: string[];
   priceRub: number;
-  /** Цена в нутриках. */
+  /** Цена в нутриках — всегда priceRub × COINS_PER_RUBLE (рассчитывается автоматически). */
   priceCoins: number;
   /** Старая цена для отображения скидки. */
   oldPriceRub?: number;
@@ -60,7 +60,10 @@ const v = (title: string, minutes: number): CourseLesson => ({ title, minutes, k
 const p = (title: string, minutes: number): CourseLesson => ({ title, minutes, kind: 'practice' });
 const m = (title: string, minutes = 10): CourseLesson => ({ title, minutes, kind: 'material' });
 
-export const COURSES: readonly CourseDef[] = [
+/** Курс в нутриках стоит в 3 раза больше, чем в рублях. */
+export const COINS_PER_RUBLE = 3;
+
+const COURSE_LIST: readonly Omit<CourseDef, 'priceCoins'>[] = [
   {
     id: 'course-start',
     title: 'Питание без диет',
@@ -77,7 +80,6 @@ export const COURSES: readonly CourseDef[] = [
     forWhom: ['Тем, кто пробовал диеты, но результат не держится', 'Тем, кто хочет есть регулярно и вкусно'],
     priceRub: 2990,
     oldPriceRub: 4990,
-    priceCoins: 25_000,
     image: img('photo-1546069901-ba9599a7e63c'),
     emoji: '🥗',
     rating: 4.8,
@@ -123,7 +125,6 @@ export const COURSES: readonly CourseDef[] = [
     ],
     forWhom: ['Тем, кто принимает добавки без системы', 'Тем, кто хочет понимать свои анализы'],
     priceRub: 7990,
-    priceCoins: 60_000,
     image: img('photo-1610832958506-aa56368176cf'),
     emoji: '🍊',
     rating: 4.9,
@@ -160,7 +161,6 @@ export const COURSES: readonly CourseDef[] = [
     forWhom: ['Тем, кого беспокоят вздутие и тяжесть после еды', 'Тем, кто прошёл обследование у врача и хочет наладить питание'],
     priceRub: 9990,
     oldPriceRub: 12990,
-    priceCoins: 80_000,
     image: img('photo-1505576399279-565b52d4ac71'),
     emoji: '🫙',
     rating: 4.8,
@@ -195,7 +195,6 @@ export const COURSES: readonly CourseDef[] = [
     outcomes: ['Выстроите вечерний ритуал', 'Поймёте, как кофеин и сахар влияют на энергию', 'Составите «энергетическое» меню'],
     forWhom: ['Тем, кто просыпается уставшим', 'Тем, у кого днём бывают резкие спады сил'],
     priceRub: 4990,
-    priceCoins: 40_000,
     image: img('photo-1544367567-0f2fcb009e0b'),
     emoji: '🌙',
     rating: 4.7,
@@ -226,7 +225,6 @@ export const COURSES: readonly CourseDef[] = [
     outcomes: ['Планирование меню на неделю за 20 минут', '40 семейных рецептов', 'Список покупок и заготовки'],
     forWhom: ['Родителям, которые устали готовить «два меню»', 'Тем, кто хочет экономить время на кухне'],
     priceRub: 3990,
-    priceCoins: 32_000,
     image: img('photo-1467453678174-768ec283a940'),
     emoji: '🍳',
     rating: 4.9,
@@ -257,7 +255,6 @@ export const COURSES: readonly CourseDef[] = [
     outcomes: ['Рассчитаете потребность в белке', 'Соберёте меню до и после тренировок', 'Улучшите восстановление'],
     forWhom: ['Тем, кто регулярно тренируется', 'Тем, кто только начинает двигаться больше'],
     priceRub: 5990,
-    priceCoins: 48_000,
     image: img('photo-1607962837359-5e7e89f86776'),
     emoji: '🏃',
     rating: 4.7,
@@ -289,7 +286,6 @@ export const COURSES: readonly CourseDef[] = [
     forWhom: ['Тем, кто хочет сменить профессию', 'Фитнес-тренерам и специалистам смежных сфер'],
     priceRub: 49_900,
     oldPriceRub: 69_900,
-    priceCoins: 250_000,
     image: img('photo-1576091160550-2173dba999ef'),
     emoji: '🎓',
     rating: 4.9,
@@ -315,6 +311,8 @@ export const COURSES: readonly CourseDef[] = [
     ],
   },
 ];
+
+export const COURSES: readonly CourseDef[] = COURSE_LIST.map((c) => ({ ...c, priceCoins: c.priceRub * COINS_PER_RUBLE }));
 
 export const findCourse = (id: string) => COURSES.find((c) => c.id === id);
 

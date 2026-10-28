@@ -1,6 +1,6 @@
 import type { CourseDef } from '@shared/courses';
 import { useApp } from '../store/appStore';
-import { formatCompact } from '../lib/format';
+import { formatCoins } from '../lib/format';
 import { Media } from './Media';
 import { Coin } from './Coin';
 import { Icon } from './Icon';
@@ -28,7 +28,7 @@ export function CourseCard({ course, wide = false }: { course: CourseDef; wide?:
         <div className="course-card__prices">
           <b>{formatRub(course.priceRub)}</b>
           <span className="course-card__coins">
-            <Coin size={14} /> {formatCompact(course.priceCoins)}
+            <Coin size={14} /> {formatCoins(course.priceCoins)}
           </span>
         </div>
         <Stars rating={course.rating} reviews={course.reviews} />

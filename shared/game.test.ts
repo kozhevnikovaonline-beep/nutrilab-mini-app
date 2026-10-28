@@ -159,7 +159,7 @@ describe('курсы', () => {
   it('у каждого курса корректные цены и программа', () => {
     for (const c of COURSES) {
       expect(c.priceRub).toBeGreaterThan(0);
-      expect(c.priceCoins).toBeGreaterThan(0);
+      expect(c.priceCoins).toBe(c.priceRub * 3); // в нутриках ровно в 3 раза больше, чем в рублях
       expect(c.program.length).toBeGreaterThan(0);
       expect(c.title.length).toBeLessThanOrEqual(32); // ограничение title в счёте Telegram
     }
