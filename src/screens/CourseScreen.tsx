@@ -175,7 +175,8 @@ export function CourseScreen({ courseId }: { courseId: string }) {
                   Списать нутрики: <span style={{ whiteSpace: 'nowrap' }}>−{formatRub(discount.rub)}</span>
                 </b>
                 <span className="small muted" style={{ display: 'block' }}>
-                  Спишется {formatCoins(discount.coins)} из {formatCoins(user.game.balance)} · до {Math.round(MAX_COIN_DISCOUNT_SHARE * 100)}% цены
+                  Спишется {formatCoins(discount.coins)} из {formatCoins(user.game.balance)} · 1 нутрик = 1 ₽ · до{' '}
+                  {Math.round(MAX_COIN_DISCOUNT_SHARE * 100)}% цены
                 </span>
               </span>
               <input type="checkbox" className="switch" checked={useCoins} onChange={(e) => setUseCoins(e.target.checked)} />
@@ -188,7 +189,7 @@ export function CourseScreen({ courseId }: { courseId: string }) {
               <span style={{ flex: 1, textAlign: 'left' }}>
                 <b>Скидка до {Math.round(MAX_COIN_DISCOUNT_SHARE * 100)}% нутриками</b>
                 <span className="small muted" style={{ display: 'block' }}>
-                  Накопите нутрики и оплатите ими до −{formatRub(discount.maxRub)}
+                  1 нутрик = 1 ₽. Накопите нутрики и оплатите ими до −{formatRub(discount.maxRub)}
                 </span>
               </span>
               <Icon name="chevron" size={18} />

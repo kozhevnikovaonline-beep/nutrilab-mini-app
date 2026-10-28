@@ -106,6 +106,7 @@ export function TapScreen() {
           <Coin size={40} />
           <span>{formatCoins(game.balance)}</span>
         </div>
+        <div className="small muted">1 нутрик = 1 ₽ скидки на курсы</div>
         <div className="tap-level">
           <ProgressBar value={level.progress} variant="lime" />
           <div className="small muted" style={{ marginTop: 6 }}>

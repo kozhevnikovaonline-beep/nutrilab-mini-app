@@ -308,7 +308,7 @@ async function handleUpdate(db: Db, update: Update) {
       [openAppButton(WELCOME_BUTTON, 'quiz')],
     ]);
   } else if (text.startsWith('/courses')) {
-    await sendMessage(userId, '🎓 Курсы и консультации нутрициолога оплачиваются картой, а нутриками из приложения можно оплатить до 30% цены.', [
+    await sendMessage(userId, '🎓 Курсы и консультации нутрициолога оплачиваются картой, а нутриками из приложения можно оплатить до 30% цены: 1 нутрик = 1 ₽.', [
       [openAppButton(COURSES_BUTTON, 'shop')],
     ]);
   } else {

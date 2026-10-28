@@ -143,21 +143,21 @@ describe('курсы: рубли + скидка нутриками', () => {
     expect(coinPrice(PRODUCTS[0].id)).toBe(PRODUCTS[0].price);
   });
 
-  it('скидка нутриками — не больше 30% цены, 3 нутрика = 1 ₽', () => {
-    expect(coinDiscount(7990, 1e9)).toEqual({ maxRub: 2397, rub: 2397, coins: 7191, finalRub: 5593 });
-    expect(coinDiscount(7990, 1000)).toEqual({ maxRub: 2397, rub: 333, coins: 999, finalRub: 7657 });
-    expect(coinDiscount(7990, 2).rub).toBe(0);
-    expect(isValidCoinSpend(7990, 7191)).toBe(true);
-    expect(isValidCoinSpend(7990, 7194)).toBe(false); // больше 30%
-    expect(isValidCoinSpend(7990, 10)).toBe(false); // не кратно курсу обмена
+  it('скидка нутриками — не больше 30% цены, 1 нутрик = 1 ₽', () => {
+    expect(coinDiscount(7990, 1e9)).toEqual({ maxRub: 2397, rub: 2397, coins: 2397, finalRub: 5593 });
+    expect(coinDiscount(7990, 1000)).toEqual({ maxRub: 2397, rub: 1000, coins: 1000, finalRub: 6990 });
+    expect(coinDiscount(7990, 0).rub).toBe(0);
+    expect(isValidCoinSpend(7990, 2397)).toBe(true);
+    expect(isValidCoinSpend(7990, 2398)).toBe(false); // больше 30%
+    expect(isValidCoinSpend(7990, 10.5)).toBe(false); // только целые нутрики
   });
 
   it('после оплаты рублями выдаются и списывают заявленные нутрики, без дублей', () => {
     const start = rich(10_000);
-    const paid = grantPaidCourse(start, course.id, ctx(), 7191);
-    expect(paid.state.game.balance).toBe(10_000 - 7191);
-    expect(paid.effect.purchase).toMatchObject({ productId: course.id, method: 'rub', coinsSpent: 7191 });
-    const again = grantPaidCourse(paid.state, course.id, ctx(), 7191);
+    const paid = grantPaidCourse(start, course.id, ctx(), 2397);
+    expect(paid.state.game.balance).toBe(10_000 - 2397);
+    expect(paid.effect.purchase).toMatchObject({ productId: course.id, method: 'rub', coinsSpent: 2397 });
+    const again = grantPaidCourse(paid.state, course.id, ctx(), 2397);
     expect(again.state.purchases).toHaveLength(1);
     expect(again.state.game.balance).toBe(paid.state.game.balance);
     expect(grantPaidCourse(start, course.id, ctx()).state.game.balance).toBe(10_000);
