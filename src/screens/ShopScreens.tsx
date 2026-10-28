@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { PRODUCTS, PRODUCT_CATEGORIES, SCHOOL, type ProductCategory } from '@shared/catalog';
+import { PRODUCTS, PRODUCT_CATEGORIES, SCHOOL } from '@shared/catalog';
+import { COURSES, COURSE_CATEGORIES, findCourse, type CourseCategory } from '@shared/courses';
 import type { Purchase } from '@shared/types';
 import { useApp } from '../store/appStore';
 import { useBackButton } from '../telegram/hooks';
 import { confirmAction, haptic, openLink } from '../telegram/webapp';
 import { links } from '../lib/config';
 import { formatCoins, formatDate } from '../lib/format';
-import { BalanceChip, Empty, MainAction, PageHead, Price } from '../components/ui';
+import { AccentTitle, BalanceChip, Empty, MainAction, PageHead, Price } from '../components/ui';
 import { ProductCard } from '../components/ProductCard';
+import { CourseCard } from '../components/CourseCard';
+import { PageTip } from '../components/Onboarding';
 import { Media } from '../components/Media';
 import { Icon } from '../components/Icon';
 
-type Filter = 'all' | ProductCategory;
+type Segment = 'courses' | 'bonus' | 'mine';
+type Filter = 'all' | CourseCategory;
 
 async function copyText(text: string) {
   try {
@@ -27,16 +31,22 @@ function activationMessage(productTitle: string, code: string) {
 }
 
 function PurchaseRow({ purchase }: { purchase: Purchase }) {
-  const product = PRODUCTS.find((p) => p.id === purchase.productId);
   const push = useApp((s) => s.push);
-  if (!product) return null;
+  const course = findCourse(purchase.productId);
+  const product = PRODUCTS.find((p) => p.id === purchase.productId);
+  const item = course ?? product;
+  if (!item) return null;
   return (
-    <button className="list-item" onClick={() => push({ name: 'product', productId: product.id })}>
-      <span className="list-item__icon">{product.emoji}</span>
+    <button
+      className="list-item"
+      onClick={() => push(course ? { name: 'course', courseId: course.id } : { name: 'product', productId: item.id })}
+    >
+      <span className="list-item__icon">{item.emoji}</span>
       <div className="list-item__body">
-        <div className="list-item__title">{product.title}</div>
+        <div className="list-item__title">{item.title}</div>
         <div className="list-item__sub">
-          {formatDate(purchase.purchasedAt)} · код <b style={{ color: 'var(--ink)' }}>{purchase.code}</b>
+          {formatDate(purchase.purchasedAt)} · {purchase.method === 'rub' ? 'картой' : 'за нутрики'} · код{' '}
+          <b style={{ color: 'var(--ink)' }}>{purchase.code}</b>
         </div>
       </div>
       <Icon name="chevron" size={18} className="muted" />
@@ -44,77 +54,143 @@ function PurchaseRow({ purchase }: { purchase: Purchase }) {
   );
 }
 
+const normalize = (s: string) => s.toLowerCase().replace(/ё/g, 'е');
+
+/** Вкладка «Курсы»: курсы нутрициолога за ₽ и нутрики, бонусы за нутрики и мои покупки. */
 export function ShopTab() {
   const purchases = useApp((s) => s.user?.purchases ?? []);
   const setTab = useApp((s) => s.setTab);
-  const [segment, setSegment] = useState<'catalog' | 'mine'>('catalog');
+  const [segment, setSegment] = useState<Segment>('courses');
   const [filter, setFilter] = useState<Filter>('all');
-  const products = filter === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.category === filter);
+  const [query, setQuery] = useState('');
+
+  const q = normalize(query.trim());
+  const courses = COURSES.filter(
+    (c) =>
+      (filter === 'all' || c.category === filter) &&
+      (!q || normalize(`${c.title} ${c.subtitle} ${c.description}`).includes(q)),
+  );
+
+  const select = (s: Segment) => {
+    haptic.select();
+    setSegment(s);
+  };
 
   return (
     <main className="screen stack">
       <header className="row">
-        <h1 className="h1" style={{ flex: 1 }}>
-          Магазин
-        </h1>
+        <AccentTitle as="h1" className="h1" text="Курсы" accent="нутрициолога" />
+        <span className="spacer" />
         <BalanceChip />
       </header>
-      <p className="text-2 small" style={{ marginTop: -6 }}>
-        Обменивайте нутрики на материалы, курсы и персональную работу со специалистами школы.
-      </p>
+
+      <PageTip id="shop" />
+
+      <label className="search">
+        <Icon name="search" size={20} />
+        <input
+          type="search"
+          placeholder="Введите запрос"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            if (segment !== 'courses') setSegment('courses');
+          }}
+          enterKeyHint="search"
+        />
+        {query && (
+          <button onClick={() => setQuery('')} aria-label="Очистить">
+            <Icon name="x" size={18} />
+          </button>
+        )}
+      </label>
 
       <div className="segments" role="tablist">
-        <button role="tab" aria-selected={segment === 'catalog'} className="segments__item" onClick={() => setSegment('catalog')}>
-          Каталог
+        <button role="tab" aria-selected={segment === 'courses'} className="segments__item" onClick={() => select('courses')}>
+          Курсы
         </button>
-        <button role="tab" aria-selected={segment === 'mine'} className="segments__item" onClick={() => setSegment('mine')}>
-          Мои покупки{purchases.length ? ` · ${purchases.length}` : ''}
+        <button role="tab" aria-selected={segment === 'bonus'} className="segments__item" onClick={() => select('bonus')}>
+          За нутрики
+        </button>
+        <button role="tab" aria-selected={segment === 'mine'} className="segments__item" onClick={() => select('mine')}>
+          Мои{purchases.length ? ` · ${purchases.length}` : ''}
         </button>
       </div>
 
-      {segment === 'catalog' ? (
+      {segment === 'courses' && (
         <>
-          <div className="hscroll" style={{ paddingBottom: 0 }}>
-            {(['all', ...Object.keys(PRODUCT_CATEGORIES)] as Filter[]).map((f) => (
+          <div className="hscroll" style={{ paddingBottom: 4 }}>
+            {(['all', ...Object.keys(COURSE_CATEGORIES)] as Filter[]).map((f) => (
               <button
                 key={f}
-                className={`pill ${filter === f ? 'pill--dark' : ''}`}
-                style={{ height: 36, padding: '0 16px' }}
+                className="filter-chip"
+                aria-pressed={filter === f}
                 onClick={() => {
                   haptic.select();
                   setFilter(f);
                 }}
               >
-                {f === 'all' ? 'Все' : PRODUCT_CATEGORIES[f]}
+                {f === 'all' ? 'Все курсы' : COURSE_CATEGORIES[f]}
               </button>
             ))}
           </div>
-          <div className="product-grid">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+          {courses.length ? (
+            <div className="product-grid">
+              {courses.map((c) => (
+                <CourseCard key={c.id} course={c} />
+              ))}
+            </div>
+          ) : (
+            <div className="card">
+              <Empty emoji="🔎" title="Ничего не нашли" text="Попробуйте другой запрос или посмотрите все курсы." />
+            </div>
+          )}
+          <div className="notice">
+            <span aria-hidden="true">💳</span>
+            <span>Каждый курс можно купить картой в рублях или обменять на нутрики, которые вы копите в приложении.</span>
           </div>
         </>
-      ) : purchases.length ? (
-        <div className="list">
-          {purchases.map((p) => (
-            <PurchaseRow key={p.id} purchase={p} />
-          ))}
-        </div>
-      ) : (
-        <div className="card">
-          <Empty
-            emoji="🛍️"
-            title="Покупок пока нет"
-            text="Копите нутрики в тапалке, проходите тест и выполняйте задания — и обменивайте их на продукты школы."
-            action={
-              <button className="btn btn--primary btn--sm" style={{ marginTop: 8 }} onClick={() => setTab('tap')}>
-                Фармить нутрики
-              </button>
-            }
-          />
-        </div>
       )}
+
+      {segment === 'bonus' && (
+        <>
+          <p className="text-2 small">Материалы и персональная работа со специалистами — только за нутрики.</p>
+          {(Object.keys(PRODUCT_CATEGORIES) as (keyof typeof PRODUCT_CATEGORIES)[]).map((cat) => (
+            <section key={cat} className="stack" style={{ gap: 10 }}>
+              <div className="section-head">
+                <h2 className="h3">{PRODUCT_CATEGORIES[cat]}</h2>
+              </div>
+              <div className="product-grid">
+                {PRODUCTS.filter((p) => p.category === cat).map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </>
+      )}
+
+      {segment === 'mine' &&
+        (purchases.length ? (
+          <div className="list">
+            {purchases.map((p) => (
+              <PurchaseRow key={p.id} purchase={p} />
+            ))}
+          </div>
+        ) : (
+          <div className="card">
+            <Empty
+              emoji="🛍️"
+              title="Покупок пока нет"
+              text="Купите курс картой или копите нутрики в тапалке, проходите тест и выполняйте задания — и обменивайте их на продукты школы."
+              action={
+                <button className="btn btn--primary btn--sm" style={{ marginTop: 8 }} onClick={() => setTab('tap')}>
+                  Фармить нутрики
+                </button>
+              }
+            />
+          </div>
+        ))}
     </main>
   );
 }

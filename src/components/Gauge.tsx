@@ -1,9 +1,10 @@
+import { useId } from 'react';
 import type { ResultTier } from '@shared/types';
 
 export const TIER_COLORS: Record<ResultTier, string> = {
-  good: '#3f9142',
-  attention: '#e6a224',
-  priority: '#e0663a',
+  good: '#22a447',
+  attention: '#f0a128',
+  priority: '#e85d4a',
 };
 
 export const TIER_LABELS: Record<ResultTier, string> = {
@@ -21,41 +22,42 @@ interface GaugeProps {
   size?: number;
 }
 
-/** Полукруглый индикатор (как «дневная сводка» в референсе) с делениями. */
+/**
+ * Полукруглый индикатор с цветной шкалой (зелёный → жёлтый → красный),
+ * как «Отчёты по питанию» в референсе. Чем выше балл теста, тем ближе к красному.
+ */
 export function Gauge({ value, max, tier, caption = 'баллов', size = 220 }: GaugeProps) {
+  const id = useId();
   const r = 80;
   const len = Math.PI * r;
   const ratio = Math.min(1, Math.max(0, value / max));
-  const ticks = Array.from({ length: 21 }, (_, i) => {
-    const a = Math.PI - (i / 20) * Math.PI;
-    const inner = i % 5 === 0 ? 92 : 95;
-    return {
-      x1: 100 + Math.cos(a) * inner,
-      y1: 100 - Math.sin(a) * inner,
-      x2: 100 + Math.cos(a) * 100,
-      y2: 100 - Math.sin(a) * 100,
-    };
-  });
+  const angle = Math.PI - ratio * Math.PI;
+  const knob = { x: 100 + Math.cos(angle) * r, y: 100 - Math.sin(angle) * r };
 
   return (
     <div style={{ position: 'relative', width: size, margin: '0 auto' }}>
-      <svg viewBox="-4 -4 208 112" width={size} role="img" aria-label={`${value} из ${max} ${caption}`}>
-        {ticks.map((t, i) => (
-          <line key={i} {...t} stroke="currentColor" strokeOpacity={0.18} strokeWidth={i % 5 === 0 ? 2 : 1} strokeLinecap="round" />
-        ))}
-        <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="currentColor" strokeOpacity={0.1} strokeWidth={16} strokeLinecap="round" />
+      <svg viewBox="0 0 200 112" width={size} role="img" aria-label={`${value} из ${max} ${caption}`}>
+        <defs>
+          <linearGradient id={`${id}g`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#3cc463" />
+            <stop offset="0.5" stopColor="#f5c33b" />
+            <stop offset="1" stopColor="#ef5a4c" />
+          </linearGradient>
+        </defs>
+        <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="currentColor" strokeOpacity={0.08} strokeWidth={16} strokeLinecap="round" />
         <path
           d="M20 100 A80 80 0 0 1 180 100"
           fill="none"
-          stroke={TIER_COLORS[tier]}
+          stroke={`url(#${id}g)`}
           strokeWidth={16}
           strokeLinecap="round"
           strokeDasharray={`${len * ratio} ${len}`}
           style={{ transition: 'stroke-dasharray 0.9s cubic-bezier(.2,.8,.2,1)' }}
         />
+        <circle cx={knob.x} cy={knob.y} r={11} fill="#fff" stroke={TIER_COLORS[tier]} strokeWidth={5} />
       </svg>
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, textAlign: 'center' }}>
-        <div style={{ fontSize: 44, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em' }}>{value}</div>
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 2, textAlign: 'center' }}>
+        <div style={{ fontSize: 50, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.04em' }}>{value}</div>
         <div className="small muted">
           из {max} {caption}
         </div>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BASE_MAX_ENERGY, DAILY_REWARDS, HABIT_REWARD, PRODUCTS, QUIZ_REWARD, UPGRADES } from './catalog';
-import { GameError, createInitialState, dailyStatus, parseAction, reduce, regenEnergy } from './game';
+import { COURSES } from './courses';
+import { GameError, coinPrice, createInitialState, dailyStatus, grantPaidCourse, parseAction, reduce, regenEnergy } from './game';
 import { QUESTION_COUNT } from './quiz';
 import type { AnswerValue, GameAction, UserState } from './types';
 
@@ -129,5 +130,39 @@ describe('parseAction', () => {
     for (const bad of [null, 'x', { type: 'taps', count: -1 }, { type: 'taps', count: 1e6 }, { type: 'taps', count: 1.5 }, { type: 'upgrade/buy', upgradeId: 'god' }, { type: 'hack' }, { type: 'quiz/submit', answers: [1] }]) {
       expect(() => parseAction(bad)).toThrow(GameError);
     }
+  });
+});
+
+describe('курсы', () => {
+  const course = COURSES[0];
+
+  it('покупаются за нутрики по цене в нутриках', () => {
+    const { state, effect } = act(rich(course.priceCoins + 1), { type: 'product/buy', productId: course.id });
+    expect(coinPrice(course.id)).toBe(course.priceCoins);
+    expect(state.game.balance).toBe(1);
+    expect(effect.purchase).toMatchObject({ productId: course.id, method: 'coins' });
+    expect(() => act(rich(course.priceCoins - 1), { type: 'product/buy', productId: course.id })).toThrow(/Не хватает/);
+  });
+
+  it('выдаются после оплаты рублями без списания нутриков и без дублей', () => {
+    const start = rich(500);
+    const paid = grantPaidCourse(start, course.id, ctx());
+    expect(paid.state.game.balance).toBe(500);
+    expect(paid.effect.purchase).toMatchObject({ productId: course.id, method: 'rub' });
+    const again = grantPaidCourse(paid.state, course.id, ctx());
+    expect(again.state.purchases).toHaveLength(1);
+    expect(() => grantPaidCourse(start, 'nope', ctx())).toThrow(/не найден/);
+    // Купленный за рубли курс нельзя купить повторно за нутрики.
+    expect(() => act({ ...paid.state, game: { ...paid.state.game, balance: 1e7 } }, { type: 'product/buy', productId: course.id })).toThrow(/уже у вас/);
+  });
+
+  it('у каждого курса корректные цены и программа', () => {
+    for (const c of COURSES) {
+      expect(c.priceRub).toBeGreaterThan(0);
+      expect(c.priceCoins).toBeGreaterThan(0);
+      expect(c.program.length).toBeGreaterThan(0);
+      expect(c.title.length).toBeLessThanOrEqual(32); // ограничение title в счёте Telegram
+    }
+    expect(new Set(COURSES.map((c) => c.id)).size).toBe(COURSES.length);
   });
 });

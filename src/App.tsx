@@ -10,6 +10,8 @@ import { GuideScreen } from './screens/GuideScreen';
 import { TapScreen } from './screens/TapScreen';
 import { ProductScreen, ShopTab } from './screens/ShopScreens';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { CourseScreen } from './screens/CourseScreen';
+import { OnboardingFlow } from './components/Onboarding';
 
 function StackScreen({ route }: { route: Route }) {
   switch (route.name) {
@@ -21,6 +23,8 @@ function StackScreen({ route }: { route: Route }) {
       return <GuideScreen />;
     case 'product':
       return <ProductScreen key={route.productId} productId={route.productId} />;
+    case 'course':
+      return <CourseScreen key={route.courseId} courseId={route.courseId} />;
   }
 }
 
@@ -29,7 +33,7 @@ function Splash() {
     <div className="state splash">
       <Logo size={88} />
       <div className="h2">NutriLab</div>
-      <div style={{ opacity: 0.7 }}>Готовим ваш ресурс…</div>
+      <div style={{ opacity: 0.8 }}>Онлайн-школа нутрициологии</div>
     </div>
   );
 }
@@ -53,6 +57,7 @@ export function App() {
   const tab = useApp((s) => s.tab);
   const stack = useApp((s) => s.stack);
   const bootstrap = useApp((s) => s.bootstrap);
+  const onboarded = useApp((s) => s.settings.onboarded);
 
   useEffect(() => {
     void bootstrap();
@@ -70,6 +75,7 @@ export function App() {
 
   if (status === 'loading') return <Splash />;
   if (status === 'error') return <BootError message={error ?? ''} retry={bootstrap} />;
+  if (!onboarded) return <OnboardingFlow />;
 
   const top = stack[stack.length - 1];
 

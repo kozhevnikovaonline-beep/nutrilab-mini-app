@@ -24,6 +24,8 @@ export const config = {
   /** @username или числовой id канала для проверки подписки (бот должен быть админом канала). */
   channelId: optional('CHANNEL_ID'),
   managerUsername: optional('MANAGER_USERNAME')?.replace(/^@/, ''),
+  /** Токен платёжного провайдера из BotFather (Payments), например ЮKassa. Без него оплата рублями идёт через менеджера. */
+  paymentProviderToken: optional('PAYMENT_PROVIDER_TOKEN'),
   /** Срок жизни initData. Telegram рекомендует проверять auth_date. */
   initDataMaxAgeSec: Number(process.env.INIT_DATA_MAX_AGE ?? 24 * 60 * 60),
   /** false — не запускать long polling (например, если бот обслуживается другим процессом). */

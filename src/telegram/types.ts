@@ -33,6 +33,7 @@ export interface TgBottomButton {
     is_active?: boolean;
     is_visible?: boolean;
     has_shine_effect?: boolean;
+    position?: 'left' | 'right' | 'top' | 'bottom';
   }): TgBottomButton;
   onClick(cb: () => void): TgBottomButton;
   offClick(cb: () => void): TgBottomButton;
@@ -108,6 +109,7 @@ export interface TgWebApp {
   openLink(url: string, options?: { try_instant_view?: boolean }): void;
   openTelegramLink(url: string): void;
   requestWriteAccess?(cb?: (granted: boolean) => void): void;
+  openInvoice?(url: string, cb?: (status: 'paid' | 'cancelled' | 'failed' | 'pending') => void): void;
   onEvent(event: TgEvent, cb: () => void): void;
   offEvent(event: TgEvent, cb: () => void): void;
 }

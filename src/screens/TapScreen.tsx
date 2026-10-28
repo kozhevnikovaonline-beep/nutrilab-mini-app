@@ -8,6 +8,7 @@ import { formatCoins } from '../lib/format';
 import { Coin } from '../components/Coin';
 import { Icon } from '../components/Icon';
 import { Price, ProgressBar } from '../components/ui';
+import { PageTip } from '../components/Onboarding';
 
 interface Floater {
   id: number;
@@ -96,6 +97,7 @@ export function TapScreen() {
 
   return (
     <main className="screen tap-screen">
+      <PageTip id="tap" />
       <div className="tap-head">
         <span className="pill">
           <Icon name="sparkle" size={14} /> {level.level.title}

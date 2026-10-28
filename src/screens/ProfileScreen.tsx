@@ -10,6 +10,7 @@ import { Avatar, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { Coin } from '../components/Coin';
 import { TIER_COLORS, TIER_LABELS } from '../components/Gauge';
+import { PageTip } from '../components/Onboarding';
 
 export function ProfileScreen() {
   const user = useApp((s) => s.user)!;
@@ -18,6 +19,7 @@ export function ProfileScreen() {
   const setTab = useApp((s) => s.setTab);
   const push = useApp((s) => s.push);
   const resetDemo = useApp((s) => s.resetDemo);
+  const replayOnboarding = useApp((s) => s.replayOnboarding);
   const { game, quiz, profile } = user;
   const level = currentLevel(game.totalEarned);
 
@@ -30,6 +32,7 @@ export function ProfileScreen() {
 
   return (
     <main className="screen stack">
+      <PageTip id="profile" />
       <section className="hero profile-card">
         <div className="row" style={{ gap: 14 }}>
           <Avatar profile={profile} size={64} />
@@ -138,6 +141,14 @@ export function ProfileScreen() {
           <div className="list-item__body">
             <div className="list-item__title">Канал {SCHOOL.name}</div>
             <div className="list-item__sub">Рецепты, разборы и эфиры</div>
+          </div>
+          <Icon name="chevron" size={18} />
+        </button>
+        <button className="list-item" onClick={replayOnboarding}>
+          <span className="list-item__icon">🧭</span>
+          <div className="list-item__body">
+            <div className="list-item__title">Как пользоваться приложением</div>
+            <div className="list-item__sub">Показать инструкцию и подсказки заново</div>
           </div>
           <Icon name="chevron" size={18} />
         </button>

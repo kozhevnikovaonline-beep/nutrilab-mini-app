@@ -53,6 +53,10 @@ export class HttpApiClient implements ApiClient {
     return this.request<ActionResult>('/api/action', action);
   }
 
+  createInvoice(courseId: string) {
+    return this.request<{ invoiceUrl: string }>('/api/invoice', { courseId });
+  }
+
   sendLeadMagnet() {
     return this.request<LeadMagnetDelivery>('/api/lead-magnet');
   }

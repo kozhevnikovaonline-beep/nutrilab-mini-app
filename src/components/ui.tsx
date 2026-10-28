@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import type { UserProfile } from '@shared/types';
-import { useMainButton } from '../telegram/hooks';
+import { useMainButton, useSecondaryButton } from '../telegram/hooks';
 import { isTelegram } from '../telegram/webapp';
 import { useApp } from '../store/appStore';
 import { formatCoins } from '../lib/format';
@@ -66,28 +66,73 @@ export function PageHead({ title, right }: { title?: ReactNode; right?: ReactNod
   );
 }
 
-interface MainActionProps {
+interface ActionButton {
   text: string;
   onClick: () => void;
   disabled?: boolean;
   loading?: boolean;
   shine?: boolean;
-  /** Экран с нижним меню: HTML-кнопка поднимается над ним. */
-  aboveTabBar?: boolean;
 }
 
-/** Главное действие экрана: нативная MainButton в Telegram, HTML-кнопка в браузере. */
-export function MainAction(props: MainActionProps) {
-  const native = useMainButton(props);
-  if (native) return null;
+interface MainActionProps extends ActionButton {
+  /** Экран с нижним меню: HTML-кнопка поднимается над ним. */
+  aboveTabBar?: boolean;
+  /** Цвет HTML-кнопки вне Telegram. */
+  tone?: 'green' | 'violet';
+  /** Вторая кнопка (SecondaryButton в Telegram), например «Купить за нутрики». */
+  secondary?: ActionButton;
+}
+
+const HIDDEN: ActionButton = { text: '', onClick: () => undefined };
+
+/** Главное действие экрана: нативные MainButton/SecondaryButton в Telegram, HTML-кнопки в браузере. */
+export function MainAction({ aboveTabBar, tone = 'green', secondary, ...main }: MainActionProps) {
+  const nativeMain = useMainButton({ ...main, color: tone === 'violet' ? '#8b7cf6' : undefined });
+  const nativeSecondary = useSecondaryButton({ ...(secondary ?? HIDDEN), visible: Boolean(secondary) });
+  const htmlSecondary = secondary && !nativeSecondary;
+  if (nativeMain && !htmlSecondary) return null;
   return (
-    <div className={`bottom-action ${props.aboveTabBar ? 'bottom-action--tabbar' : ''}`}>
-      <button className="btn btn--primary btn--block" onClick={props.onClick} disabled={props.disabled || props.loading}>
-        {props.loading ? <span className="spinner" /> : props.text}
-      </button>
+    <div className={`bottom-action ${aboveTabBar ? 'bottom-action--tabbar' : ''}`}>
+      {htmlSecondary && (
+        <button className="btn btn--violet-soft btn--block" onClick={secondary.onClick} disabled={secondary.disabled || secondary.loading}>
+          {secondary.loading ? <span className="spinner" /> : secondary.text}
+        </button>
+      )}
+      {!nativeMain && (
+        <button
+          className={`btn btn--block ${tone === 'violet' ? 'btn--violet' : 'btn--primary'}`}
+          onClick={main.onClick}
+          disabled={main.disabled || main.loading}
+        >
+          {main.loading ? <span className="spinner" /> : main.text}
+        </button>
+      )}
     </div>
   );
 }
+
+/** Рейтинг звёздами, как в карточках курсов референса. */
+export function Stars({ rating, reviews }: { rating: number; reviews?: number }) {
+  const full = Math.round(rating);
+  return (
+    <span className="stars" aria-label={`Рейтинг ${rating}`}>
+      <b style={{ color: 'var(--ink)' }}>{rating.toFixed(1)}</b>
+      <span className="stars__icons">{'★'.repeat(full)}{'☆'.repeat(5 - full)}</span>
+      {reviews !== undefined && <span>({formatCoins(reviews)})</span>}
+    </span>
+  );
+}
+
+/** Двухцветный заголовок: текст + выделенное зелёным слово. */
+export function AccentTitle({ text, accent, as: Tag = 'h2', className = 'h2' }: { text: string; accent: string; as?: 'h1' | 'h2'; className?: string }) {
+  return (
+    <Tag className={`${className} accent-title`}>
+      {text} <em>{accent}</em>
+    </Tag>
+  );
+}
+
+export const formatRub = (value: number) => `${formatCoins(value)} ₽`;
 
 export function Toasts() {
   const toasts = useApp((s) => s.toasts);

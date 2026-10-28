@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "server": "tsx server/index.ts",
-    "server:dev": "tsx watch server/index.ts"
+    "server:dev": "tsx watch server/index.ts",
+    "bot:setup": "tsx server/setup.ts"
   },
   "dependencies": {
     "react": "18.3.1",

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { TgBottomButton } from './types';
 import { tg } from './webapp';
 
 /**
@@ -22,51 +23,65 @@ export function useBackButton(onBack: (() => void) | null) {
   }, [visible]);
 }
 
-export interface MainButtonOptions {
+export interface BottomButtonOptions {
   text: string;
   onClick: () => void;
   visible?: boolean;
   disabled?: boolean;
   loading?: boolean;
   shine?: boolean;
+  /** Свой цвет кнопки (по умолчанию — фирменный для типа кнопки). */
+  color?: string;
 }
 
-const MAIN_BUTTON_COLOR = '#1f6b34';
+const COLORS = {
+  main: { bg: '#22a447', text: '#ffffff' },
+  secondary: { bg: '#efecff', text: '#7464ec' },
+  disabled: { bg: '#b9c2bb', text: '#ffffff' },
+};
 
-/**
- * Нативная нижняя кнопка Telegram (MainButton). Возвращает true, если используется
- * нативная кнопка — тогда экран не должен рисовать свою HTML-кнопку.
- */
-export function useMainButton({ text, onClick, visible = true, disabled = false, loading = false, shine = false }: MainButtonOptions) {
+function useBottomButton(kind: 'main' | 'secondary', opts: BottomButtonOptions) {
+  const { text, onClick, visible = true, disabled = false, loading = false, shine = false, color } = opts;
   const handler = useRef(onClick);
   handler.current = onClick;
+  const button: TgBottomButton | undefined =
+    kind === 'main' ? tg?.MainButton : tg?.isVersionAtLeast('7.10') ? tg.SecondaryButton : undefined;
 
   useEffect(() => {
-    if (!tg || !visible) return;
+    if (!button || !visible) return;
     const cb = () => handler.current();
-    const button = tg.MainButton;
     button.onClick(cb);
     return () => {
       button.offClick(cb);
       button.hideProgress();
       button.hide();
     };
-  }, [visible]);
+  }, [button, visible]);
 
   useEffect(() => {
-    if (!tg || !visible) return;
-    const button = tg.MainButton;
+    if (!button || !visible) return;
+    const colors = disabled ? COLORS.disabled : color ? { bg: color, text: '#ffffff' } : COLORS[kind];
     button.setParams({
       text,
-      color: disabled ? '#9aa79a' : MAIN_BUTTON_COLOR,
-      text_color: '#ffffff',
+      color: colors.bg,
+      text_color: colors.text,
       is_active: !disabled && !loading,
       is_visible: true,
-      has_shine_effect: shine,
+      has_shine_effect: shine && !disabled,
+      ...(kind === 'secondary' ? { position: 'top' } : {}),
     });
     if (loading) button.showProgress(false);
     else button.hideProgress();
-  }, [text, disabled, loading, visible, shine]);
+  }, [button, kind, text, disabled, loading, visible, shine, color]);
 
-  return tg !== null;
+  return Boolean(button);
 }
+
+/**
+ * Нативная нижняя кнопка Telegram (MainButton). Возвращает true, если используется
+ * нативная кнопка — тогда экран не должен рисовать свою HTML-кнопку.
+ */
+export const useMainButton = (opts: BottomButtonOptions) => useBottomButton('main', opts);
+
+/** Дополнительная нативная кнопка (SecondaryButton, Bot API 7.10+). */
+export const useSecondaryButton = (opts: BottomButtonOptions) => useBottomButton('secondary', opts);

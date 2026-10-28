@@ -21,6 +21,7 @@ import { formatDate } from '../lib/format';
 import { api } from '../api';
 import { Disclaimer, MainAction, PageHead, ProgressBar } from '../components/ui';
 import { Gauge, TIER_COLORS, TIER_LABELS } from '../components/Gauge';
+import { PageTip } from '../components/Onboarding';
 import { Icon } from '../components/Icon';
 import { Coin } from '../components/Coin';
 
@@ -47,6 +48,7 @@ export function QuizTab() {
   if (quiz) {
     return (
       <main className="screen stack">
+        <PageTip id="quiz" />
         <h1 className="h1">Тест</h1>
         <section className="card" style={{ textAlign: 'center' }}>
           <div className="caps muted">«{QUIZ_TITLE}»</div>
@@ -80,6 +82,7 @@ export function QuizTab() {
 
   return (
     <main className="screen stack">
+      <PageTip id="quiz" />
       <section className="hero">
         <span className="pill pill--glass">
           <Coin size={16} /> +{QUIZ_REWARD} нутриков за прохождение

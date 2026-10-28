@@ -9,6 +9,7 @@ import { api } from '../api';
 import { useNow } from '../lib/useNow';
 import { Disclaimer, Empty, PageHead, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
+import { PageTip } from '../components/Onboarding';
 import { Coin } from '../components/Coin';
 
 const MEAL_LABELS = ['Завтрак', 'Обед', 'Ужин'];
@@ -78,6 +79,7 @@ export function GuideScreen() {
   return (
     <main className="screen screen--stack stack">
       <PageHead title="Ваш гид" />
+      <PageTip id="guide" />
 
       <section className="hero guide-cover">
         <span className="pill pill--glass">
@@ -174,7 +176,7 @@ export function GuideScreen() {
         </span>
       </div>
       <ProgressBar value={habits.done.length / HABITS.length} />
-      <div className="list">
+      <div className="list habit-list">
         {HABITS.map((h) => {
           const done = habits.done.includes(h.id);
           const rewarded = habits.rewarded.includes(h.id);

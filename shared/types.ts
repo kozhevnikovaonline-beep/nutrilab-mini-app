@@ -45,6 +45,8 @@ export interface Purchase {
   /** Промокод/код доступа, который пользователь передаёт менеджеру школы. */
   code: string;
   purchasedAt: number;
+  /** Как оплачено: нутриками или рублями. */
+  method?: 'coins' | 'rub';
 }
 
 export interface HabitLog {

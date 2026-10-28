@@ -4,9 +4,9 @@ import { Icon, type IconName } from './Icon';
 
 const ITEMS: { tab: Tab; label: string; icon: IconName }[] = [
   { tab: 'home', label: 'Главная', icon: 'home' },
-  { tab: 'quiz', label: 'Тест', icon: 'test' },
+  { tab: 'shop', label: 'Курсы', icon: 'grid' },
   { tab: 'tap', label: 'Фарм', icon: 'leaf' },
-  { tab: 'shop', label: 'Магазин', icon: 'bag' },
+  { tab: 'quiz', label: 'Тест', icon: 'test' },
   { tab: 'profile', label: 'Профиль', icon: 'user' },
 ];
 

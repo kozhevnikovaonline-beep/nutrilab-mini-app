@@ -1,6 +1,6 @@
 import type { ActionResult, GameAction, GameErrorCode, UserState } from '@shared/types';
 
-export type ApiErrorCode = GameErrorCode | 'NETWORK' | 'UNAUTHORIZED' | 'SERVER' | 'TIMEOUT';
+export type ApiErrorCode = GameErrorCode | 'NETWORK' | 'UNAUTHORIZED' | 'SERVER' | 'TIMEOUT' | 'PAYMENTS_DISABLED';
 
 export class ApiError extends Error {
   constructor(
@@ -27,6 +27,11 @@ export interface ApiClient {
   bootstrap(): Promise<UserState>;
   dispatch(action: GameAction): Promise<ActionResult>;
   sendLeadMagnet(): Promise<LeadMagnetDelivery>;
+  /**
+   * Ссылка на счёт Telegram Payments для оплаты курса рублями.
+   * Есть только у реального сервера с подключённой платёжной системой.
+   */
+  createInvoice?(courseId: string): Promise<{ invoiceUrl: string }>;
   /** Сброс прогресса — доступен только в демо-режиме. */
   reset?(): Promise<UserState>;
 }

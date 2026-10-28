@@ -4,7 +4,16 @@ import { allowedOrigin, config } from './config';
 import { Db } from './db';
 import { InitDataError, verifyInitData } from './telegramAuth';
 import { applyAction, bootstrapUser, withUserLock, type ServiceDeps } from './service';
-import { deliverLeadMagnet, isChannelMember, pendingReferrals, runFollowUps, sendMessage, startPolling } from './bot';
+import {
+  createCourseInvoice,
+  deliverLeadMagnet,
+  isChannelMember,
+  pendingReferrals,
+  runFollowUps,
+  sendMessage,
+  startPolling,
+} from './bot';
+import { findCourse } from '../shared/courses';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const RATE_WINDOW_MS = 10_000;
@@ -65,6 +74,18 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
+async function createInvoice(userId: number, body: unknown) {
+  if (!config.paymentProviderToken) {
+    throw new HttpError(503, 'PAYMENTS_DISABLED', 'Онлайн-оплата пока не подключена');
+  }
+  const courseId = (body as { courseId?: unknown } | null)?.courseId;
+  if (typeof courseId !== 'string' || !findCourse(courseId)) throw new HttpError(404, 'NOT_FOUND', 'Курс не найден');
+  if (db.get(userId)?.state.purchases.some((p) => p.productId === courseId)) {
+    throw new HttpError(409, 'ALREADY_PURCHASED', 'Этот курс уже у вас');
+  }
+  return { invoiceUrl: await createCourseInvoice(userId, courseId) };
+}
+
 function authenticate(req: IncomingMessage) {
   const header = req.headers.authorization ?? '';
   if (!header.startsWith('tma ')) throw new HttpError(401, 'UNAUTHORIZED', 'Откройте приложение из Telegram');
@@ -105,6 +126,8 @@ const server = createServer(async (req, res) => {
           return bootstrapUser(db, auth, deps);
         case '/api/action':
           return applyAction(db, userId, body, deps);
+        case '/api/invoice':
+          return createInvoice(userId, body);
         case '/api/lead-magnet':
           return { sentToChat: await deliverLeadMagnet(db, userId) };
         default:

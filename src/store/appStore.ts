@@ -13,7 +13,8 @@ export type Route =
   | { name: 'quiz-run' }
   | { name: 'quiz-result' }
   | { name: 'guide' }
-  | { name: 'product'; productId: string };
+  | { name: 'product'; productId: string }
+  | { name: 'course'; courseId: string };
 
 export interface Toast {
   id: number;
@@ -26,6 +27,16 @@ interface QuizDraft {
   index: number;
 }
 
+interface Settings {
+  haptics: boolean;
+  /** Пользователь прошёл приветственные слайды. */
+  onboarded: boolean;
+  /** Подсказки на страницах, которые пользователь уже закрыл. */
+  seenTips: string[];
+}
+
+const DEFAULT_SETTINGS: Settings = { haptics: true, onboarded: false, seenTips: [] };
+
 interface AppStore {
   status: 'loading' | 'ready' | 'error';
   error: string | null;
@@ -36,7 +47,7 @@ interface AppStore {
   /** Тапы, учтённые локально, но ещё не подтверждённые сервером. */
   pendingTaps: number;
   busy: Record<string, boolean>;
-  settings: { haptics: boolean };
+  settings: Settings;
   quizDraft: QuizDraft;
 
   bootstrap(): Promise<void>;
@@ -53,7 +64,19 @@ interface AppStore {
   resetQuizDraft(): void;
   setHaptics(value: boolean): void;
   resetDemo(): Promise<void>;
+  /** Перезагрузка состояния с сервера (например, после оплаты). */
+  refresh(): Promise<void>;
+  completeOnboarding(): void;
+  markTipSeen(tip: string): void;
+  /** Показать онбординг и подсказки на страницах заново. */
+  replayOnboarding(): void;
 }
+
+/** Вкладка из ссылки бота (?tab=quiz / ?tab=shop). */
+const initialTab: Tab = (() => {
+  const t = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('tab') : null;
+  return t === 'quiz' || t === 'shop' ? t : 'home';
+})();
 
 const emptyDraft = (): QuizDraft => ({ answers: Array(QUESTION_COUNT).fill(null), index: 0 });
 
@@ -81,12 +104,12 @@ export const useApp = create<AppStore>()(
       status: 'loading',
       error: null,
       user: null,
-      tab: 'home',
+      tab: initialTab,
       stack: [],
       toasts: [],
       pendingTaps: 0,
       busy: {},
-      settings: { haptics: true },
+      settings: DEFAULT_SETTINGS,
       quizDraft: emptyDraft(),
 
       async bootstrap() {
@@ -213,7 +236,31 @@ export const useApp = create<AppStore>()(
 
       setHaptics(value) {
         setHapticsEnabled(value);
-        set({ settings: { haptics: value } });
+        set((s) => ({ settings: { ...s.settings, haptics: value } }));
+      },
+
+      async refresh() {
+        try {
+          await get().flushTaps();
+          const user = await api.bootstrap();
+          set({ user });
+        } catch (err) {
+          get().toast(errorMessage(err), 'error');
+        }
+      },
+
+      completeOnboarding() {
+        set((s) => ({ settings: { ...s.settings, onboarded: true } }));
+      },
+
+      markTipSeen(tip) {
+        set((s) =>
+          s.settings.seenTips.includes(tip) ? s : { settings: { ...s.settings, seenTips: [...s.settings.seenTips, tip] } },
+        );
+      },
+
+      replayOnboarding() {
+        set((s) => ({ settings: { ...s.settings, onboarded: false, seenTips: [] }, tab: 'home', stack: [] }));
       },
 
       async resetDemo() {
@@ -233,7 +280,7 @@ export const useApp = create<AppStore>()(
         const draft = p?.quizDraft;
         const validDraft =
           draft && Array.isArray(draft.answers) && draft.answers.length === QUESTION_COUNT ? draft : emptyDraft();
-        return { ...current, settings: p?.settings ?? current.settings, quizDraft: validDraft };
+        return { ...current, settings: { ...DEFAULT_SETTINGS, ...p?.settings }, quizDraft: validDraft };
       },
     },
   ),

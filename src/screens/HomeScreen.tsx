@@ -1,16 +1,18 @@
-import { GUIDE, PRODUCTS, QUIZ_REWARD, SCHOOL } from '@shared/catalog';
+import { GUIDE, QUIZ_REWARD, SCHOOL } from '@shared/catalog';
+import { COURSES, EXPERT_PHOTO } from '@shared/courses';
 import { MAX_SCORE, QUIZ_BANNER, QUIZ_RESULTS } from '@shared/quiz';
 import { useApp } from '../store/appStore';
 import { greeting } from '../lib/format';
 import { links } from '../lib/config';
 import { openLink } from '../telegram/webapp';
-import { Avatar, BalanceChip } from '../components/ui';
+import { AccentTitle, Avatar, BalanceChip } from '../components/ui';
 import { DailyBonus } from '../components/DailyBonus';
 import { TaskList } from '../components/TaskList';
-import { ProductCard } from '../components/ProductCard';
+import { CourseCard } from '../components/CourseCard';
+import { PageTip } from '../components/Onboarding';
 import { Icon } from '../components/Icon';
 import { Coin } from '../components/Coin';
-import { TIER_COLORS, TIER_LABELS } from '../components/Gauge';
+import { Gauge, TIER_LABELS } from '../components/Gauge';
 
 export function HomeScreen() {
   const user = useApp((s) => s.user)!;
@@ -20,39 +22,46 @@ export function HomeScreen() {
 
   return (
     <main className="screen stack">
-      <header className="topbar" style={{ marginBottom: 2 }}>
+      <header className="topbar" style={{ marginBottom: 0 }}>
         <Avatar profile={user.profile} />
         <div className="topbar__title">
-          <div className="small muted">{greeting()},</div>
           <div className="h3" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user.profile.firstName}
+            {greeting()}, {user.profile.firstName}
           </div>
+          <div className="small muted">{SCHOOL.name} · {SCHOOL.tagline.toLowerCase()}</div>
         </div>
         <BalanceChip />
       </header>
 
+      <button className="search" onClick={() => setTab('shop')} aria-label="Найти курс">
+        <Icon name="search" size={20} />
+        <span style={{ flex: 1, textAlign: 'left' }}>Найти курс или материал</span>
+      </button>
+
+      <PageTip id="home" />
+
       {quiz ? (
-        <section className="hero">
-          <div className="row" style={{ marginBottom: 14 }}>
-            <span className="pill pill--glass">Ваш ресурс</span>
-            <span className="spacer" />
-            <span className="pill" style={{ background: TIER_COLORS[quiz.tier], color: '#fff' }}>
-              {TIER_LABELS[quiz.tier]}
-            </span>
+        <section className="hero home-result">
+          <div className="row" style={{ alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <span className="pill pill--glass">Ваш результат</span>
+              <p className="h3" style={{ marginTop: 12 }}>
+                {QUIZ_RESULTS[quiz.tier].title}
+              </p>
+              <p className="small muted" style={{ marginTop: 4 }}>
+                {TIER_LABELS[quiz.tier]}
+              </p>
+            </div>
+            <div className="home-result__gauge">
+              <Gauge value={quiz.score} max={MAX_SCORE} tier={quiz.tier} size={130} />
+            </div>
           </div>
-          <div className="row" style={{ alignItems: 'flex-end', gap: 8 }}>
-            <span style={{ fontSize: 56, fontWeight: 800, lineHeight: 0.9, letterSpacing: '-0.04em' }}>{quiz.score}</span>
-            <span className="muted" style={{ paddingBottom: 4 }}>/ {MAX_SCORE} баллов</span>
-          </div>
-          <p className="h3" style={{ marginTop: 10 }}>
-            {QUIZ_RESULTS[quiz.tier].title}
-          </p>
-          <div className="row" style={{ marginTop: 18, gap: 10 }}>
-            <button className="btn btn--lime" style={{ flex: 1 }} onClick={() => push({ name: 'guide' })}>
+          <div className="row" style={{ marginTop: 16, gap: 10 }}>
+            <button className="btn btn--white" style={{ flex: 1 }} onClick={() => push({ name: 'guide' })}>
               <Icon name="gift" size={18} /> Мой гид
             </button>
-            <button className="btn btn--white" style={{ flex: 1 }} onClick={() => push({ name: 'quiz-result' })}>
-              Результат
+            <button className="btn btn--glass" style={{ flex: 1 }} onClick={() => push({ name: 'quiz-result' })}>
+              Подробнее
             </button>
           </div>
         </section>
@@ -61,7 +70,7 @@ export function HomeScreen() {
           <span className="pill pill--glass">
             <Coin size={16} /> +{QUIZ_REWARD} и гид в подарок
           </span>
-          <h1 className="h2" style={{ marginTop: 14, fontSize: 24 }}>
+          <h1 className="h2" style={{ marginTop: 14, fontSize: 25 }}>
             {QUIZ_BANNER.title}
           </h1>
           <p className="muted small" style={{ marginTop: 10 }}>
@@ -74,50 +83,44 @@ export function HomeScreen() {
         </section>
       )}
 
-      <button
-        className="card card--lime lead-card"
-        onClick={() => (quiz ? push({ name: 'guide' }) : setTab('quiz'))}
-        style={{ textAlign: 'left' }}
-      >
+      <button className="card lead-card" onClick={() => (quiz ? push({ name: 'guide' }) : setTab('quiz'))} style={{ textAlign: 'left' }}>
         <div className="lead-card__art" aria-hidden="true">
           🥗
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="caps" style={{ opacity: 0.7 }}>
+          <div className="caps" style={{ color: 'var(--green)' }}>
             Подарок
           </div>
           <div className="h3">Гид «{GUIDE.title}»</div>
-          <div className="small" style={{ opacity: 0.75, marginTop: 2 }}>
-            {quiz ? 'Персональные шаги, меню на 3 дня и чек-лист привычек' : 'Откроется после прохождения теста'}
+          <div className="small muted" style={{ marginTop: 2 }}>
+            {quiz ? 'Персональные шаги, меню на 3 дня и чек-лист' : 'Откроется после прохождения теста'}
           </div>
         </div>
         <Icon name={quiz ? 'chevron' : 'lock'} size={20} />
       </button>
 
-      <DailyBonus />
-
       <div className="section-head">
-        <h2 className="h3">Задания</h2>
-      </div>
-      <TaskList />
-
-      <div className="section-head">
-        <h2 className="h3">Магазин школы</h2>
+        <AccentTitle text="Новые" accent="курсы" />
         <button className="link" onClick={() => setTab('shop')}>
           Все
         </button>
       </div>
       <div className="hscroll">
-        {PRODUCTS.slice(0, 5).map((p) => (
-          <ProductCard key={p.id} product={p} wide />
+        {COURSES.slice(0, 5).map((c) => (
+          <CourseCard key={c.id} course={c} wide />
         ))}
       </div>
 
+      <DailyBonus />
+
+      <div className="section-head">
+        <AccentTitle text="Задания за" accent="нутрики" />
+      </div>
+      <TaskList />
+
       <section className="card expert">
         <div className="row">
-          <div className="expert__photo" aria-hidden="true">
-            👩‍⚕️
-          </div>
+          <img className="expert-photo" src={EXPERT_PHOTO} alt={SCHOOL.expert.name} />
           <div style={{ flex: 1 }}>
             <div className="h3">{SCHOOL.expert.name}</div>
             <div className="small muted">{SCHOOL.expert.role}</div>

@@ -12,6 +12,7 @@ import {
   UPGRADES,
   type LevelDef,
 } from './catalog';
+import { findCourse } from './courses';
 import { isCompleteAnswers, scoreQuiz } from './quiz';
 import type {
   ActionResult,
@@ -19,6 +20,7 @@ import type {
   GameAction,
   GameErrorCode,
   GameState,
+  Purchase,
   UpgradeId,
   UserProfile,
   UserState,
@@ -295,22 +297,47 @@ export function reduce(state: UserState, action: GameAction, ctx: ReduceContext)
     }
 
     case 'product/buy': {
-      const product = PRODUCTS.find((p) => p.id === action.productId);
-      if (!product) throw new GameError('NOT_FOUND', 'Продукт не найден');
-      if (state.purchases.some((p) => p.productId === product.id)) {
-        throw new GameError('ALREADY_PURCHASED', 'Этот продукт уже у вас');
-      }
-      const paid = spend(game, product.price);
-      const purchase = {
-        id: ctx.genId(),
-        productId: product.id,
-        code: `NL-${ctx.genId().replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase()}`,
-        purchasedAt: now,
-      };
+      const price = coinPrice(action.productId);
+      if (price === null) throw new GameError('NOT_FOUND', 'Продукт не найден');
+      assertNotOwned(state, action.productId);
+      const purchase = makePurchase(action.productId, 'coins', ctx);
       return {
-        state: { ...state, game: paid, purchases: [purchase, ...state.purchases] },
+        state: { ...state, game: spend(game, price), purchases: [purchase, ...state.purchases] },
         effect: { purchase },
       };
     }
   }
+}
+
+/** Цена в нутриках для любого товара: продукта магазина или курса. */
+export function coinPrice(id: string): number | null {
+  return PRODUCTS.find((p) => p.id === id)?.price ?? findCourse(id)?.priceCoins ?? null;
+}
+
+function assertNotOwned(state: UserState, productId: string) {
+  if (state.purchases.some((p) => p.productId === productId)) {
+    throw new GameError('ALREADY_PURCHASED', 'Этот продукт уже у вас');
+  }
+}
+
+function makePurchase(productId: string, method: Purchase['method'], ctx: ReduceContext): Purchase {
+  return {
+    id: ctx.genId(),
+    productId,
+    code: `NL-${ctx.genId().replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase()}`,
+    purchasedAt: ctx.now,
+    method,
+  };
+}
+
+/**
+ * Выдача курса после успешной оплаты рублями (вызывается только сервером
+ * по событию successful_payment от Telegram). Повторная оплата не создаёт дубль.
+ */
+export function grantPaidCourse(state: UserState, courseId: string, ctx: ReduceContext): ActionResult {
+  if (!findCourse(courseId)) throw new GameError('NOT_FOUND', 'Курс не найден');
+  const existing = state.purchases.find((p) => p.productId === courseId);
+  if (existing) return { state, effect: { purchase: existing } };
+  const purchase = makePurchase(courseId, 'rub', ctx);
+  return { state: { ...state, purchases: [purchase, ...state.purchases] }, effect: { purchase } };
 }

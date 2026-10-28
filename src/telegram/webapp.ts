@@ -18,8 +18,8 @@ export const isTelegram = webApp !== null;
 const MOBILE_PLATFORMS = new Set(['ios', 'android', 'android_x']);
 
 export const BRAND_COLORS = {
-  light: { header: '#0f3d1e', background: '#f2f5ec', bottomBar: '#f2f5ec' },
-  dark: { header: '#0a2412', background: '#0b110c', bottomBar: '#0b110c' },
+  light: { header: '#f4f6f3', background: '#f4f6f3', bottomBar: '#ffffff' },
+  dark: { header: '#0e1310', background: '#0e1310', bottomBar: '#171e19' },
 } as const;
 
 export function colorScheme(): 'light' | 'dark' {
@@ -115,6 +115,12 @@ export function confirmAction(message: string): Promise<boolean> {
 export function requestWriteAccess(): Promise<boolean> {
   if (!webApp?.requestWriteAccess || !webApp.isVersionAtLeast('6.9')) return Promise.resolve(false);
   return new Promise((resolve) => webApp.requestWriteAccess!((granted) => resolve(granted)));
+}
+
+/** Открывает нативное окно оплаты Telegram. Возвращает итоговый статус. */
+export function openInvoice(url: string): Promise<'paid' | 'cancelled' | 'failed' | 'pending'> {
+  if (!webApp?.openInvoice || !webApp.isVersionAtLeast('6.1')) return Promise.resolve('failed');
+  return new Promise((resolve) => webApp.openInvoice!(url, (status) => resolve(status)));
 }
 
 export function openLink(url: string) {
