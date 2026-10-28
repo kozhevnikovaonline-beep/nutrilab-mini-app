@@ -47,6 +47,8 @@ export interface Purchase {
   purchasedAt: number;
   /** Как оплачено: нутриками или рублями. */
   method?: 'coins' | 'rub';
+  /** Нутрики, списанные как скидка при оплате рублями. */
+  coinsSpent?: number;
 }
 
 export interface HabitLog {

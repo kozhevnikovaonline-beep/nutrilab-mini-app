@@ -56,7 +56,7 @@ function PurchaseRow({ purchase }: { purchase: Purchase }) {
 
 const normalize = (s: string) => s.toLowerCase().replace(/ё/g, 'е');
 
-/** Вкладка «Курсы»: курсы нутрициолога за ₽ и нутрики, бонусы за нутрики и мои покупки. */
+/** Вкладка «Курсы»: курсы и консультации за ₽ (скидка нутриками до 30%), материалы за нутрики и мои покупки. */
 export function ShopTab() {
   const purchases = useApp((s) => s.user?.purchases ?? []);
   const setTab = useApp((s) => s.setTab);
@@ -147,26 +147,21 @@ export function ShopTab() {
           )}
           <div className="notice">
             <span aria-hidden="true">💳</span>
-            <span>Каждый курс можно купить картой в рублях или обменять на нутрики, которые вы копите в приложении.</span>
+            <span>
+              Все курсы и консультации оплачиваются в рублях. Накопленные нутрики можно списать как скидку до 30% цены — включите её на странице курса.
+            </span>
           </div>
         </>
       )}
 
       {segment === 'bonus' && (
         <>
-          <p className="text-2 small">Материалы и персональная работа со специалистами — только за нутрики.</p>
-          {(Object.keys(PRODUCT_CATEGORIES) as (keyof typeof PRODUCT_CATEGORIES)[]).map((cat) => (
-            <section key={cat} className="stack" style={{ gap: 10 }}>
-              <div className="section-head">
-                <h2 className="h3">{PRODUCT_CATEGORIES[cat]}</h2>
-              </div>
-              <div className="product-grid">
-                {PRODUCTS.filter((p) => p.category === cat).map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
-            </section>
-          ))}
+          <p className="text-2 small">Полезные материалы школы — целиком за нутрики. Курсы и консультации — в разделе «Курсы» со скидкой нутриками до 30%.</p>
+          <div className="product-grid">
+            {PRODUCTS.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
         </>
       )}
 

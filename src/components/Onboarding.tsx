@@ -6,12 +6,15 @@ import { haptic } from '../telegram/webapp';
 import { Coin } from './Coin';
 import { Icon } from './Icon';
 import { formatCoins } from '../lib/format';
+import { coinDiscount } from '@shared/pricing';
 
 // ───────────────────────── Приветственные слайды ─────────────────────────
 
 interface Slide {
   title: string;
   accent: string;
+  /** Текст после акцентного слова. */
+  after?: string;
   /** Акцентное слово идёт перед основным текстом. */
   accentFirst?: boolean;
   text: string;
@@ -31,14 +34,14 @@ function GaugeArt() {
             </linearGradient>
           </defs>
           <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#eef2ec" strokeWidth="16" strokeLinecap="round" />
-          <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#obg)" strokeWidth="16" strokeLinecap="round" strokeDasharray="120 252" />
+          <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#obg)" strokeWidth="16" strokeLinecap="round" strokeDasharray="176 252" />
         </svg>
         <div className="ob-score__num">
-          18<span>/50</span>
+          35<span>/50</span>
         </div>
       </div>
-      <div className="ob-float ob-bubble" style={{ left: 6, bottom: 36 }}>
-        🌿 Нужно внимание
+      <div className="ob-float ob-bubble ob-bubble--alert" style={{ left: 6, bottom: 36 }}>
+        ❗ Особое внимание
       </div>
       <div className="ob-float ob-bubble ob-bubble--white" style={{ right: 4, top: 26 }}>
         25 вопросов · 1–3 мин
@@ -108,7 +111,7 @@ function CoursesArt() {
         </div>
         <div className="ob-course__btn">Купить за {formatCoins(course.priceRub)} ₽</div>
         <div className="ob-course__btn ob-course__btn--soft">
-          <Coin size={14} /> или {formatCoins(course.priceCoins)} нутриков
+          <Coin size={14} /> −30% нутриками: {formatCoins(coinDiscount(course.priceRub, Infinity).finalRub)} ₽
         </div>
       </div>
       <img className="ob-avatar ob-float" src={EXPERT_PHOTO} alt="" />
@@ -119,6 +122,7 @@ function CoursesArt() {
 const SLIDES: Slide[] = [
   {
     title: 'Узнайте, что',
+    after: 'чувствовать себя лучше?',
     accent: 'мешает вам',
     text: 'Пройдите короткий тест о самочувствии: энергия, пищеварение, сон, внешность и привычки. Результат — сразу.',
     art: <GaugeArt />,
@@ -137,9 +141,9 @@ const SLIDES: Slide[] = [
     art: <TapArt />,
   },
   {
-    title: 'Курсы за ₽',
-    accent: 'или нутрики',
-    text: `Обменивайте нутрики на курсы и материалы ${SCHOOL.name} или покупайте курсы картой. Кураторы помогут на каждом шаге.`,
+    title: 'Курсы со скидкой',
+    accent: 'до 30% нутриками',
+    text: `Курсы и консультации ${SCHOOL.name} оплачиваются картой, а накопленными нутриками можно оплатить до 30% цены. Кураторы помогут на каждом шаге.`,
     art: <CoursesArt />,
   },
 ];
@@ -180,7 +184,7 @@ export function OnboardingFlow() {
             </>
           ) : (
             <>
-              {slide.title} <em>{slide.accent}</em>
+              {slide.title} <em>{slide.accent}</em>{slide.after ? ` ${slide.after}` : null}
             </>
           )}
         </h1>
@@ -204,7 +208,7 @@ export function OnboardingFlow() {
 
 // ───────────────────────── Подсказки на страницах ─────────────────────────
 
-export type TipId = 'home' | 'quiz' | 'tap' | 'shop' | 'profile' | 'guide';
+export type TipId = 'home' | 'quiz' | 'tap' | 'shop' | 'course' | 'profile' | 'guide';
 
 const TIPS: Record<TipId, { emoji: string; title: string; steps: string[] }> = {
   home: {
@@ -238,9 +242,18 @@ const TIPS: Record<TipId, { emoji: string; title: string; steps: string[] }> = {
     emoji: '🎓',
     title: 'Курсы и магазин',
     steps: [
-      'Выберите курс — во вкладке «Содержание» видна вся программа.',
-      'Купите курс картой в рублях или обменяйте на нутрики.',
-      'Во вкладке «За нутрики» — материалы и персональная работа со специалистом.',
+      'Во вкладке «Курсы» — курсы, программы и персональные консультации.',
+      'Все курсы оплачиваются в рублях, а нутриками можно оплатить до 30% цены.',
+      'Во вкладке «За нутрики» — полезные материалы, которые можно взять целиком за нутрики.',
+    ],
+  },
+  course: {
+    emoji: '💳',
+    title: 'Покупка курса',
+    steps: [
+      'Во вкладке «Содержание» посмотрите программу курса.',
+      'Включите «Списать нутрики» — они заменят до 30% цены (3 нутрика = 1 ₽).',
+      'Нажмите «Купить» и оплатите остаток картой — доступ откроется по коду.',
     ],
   },
   profile: {
@@ -267,7 +280,14 @@ const TIPS: Record<TipId, { emoji: string; title: string; steps: string[] }> = {
 export function PageTip({ id }: { id: TipId }) {
   const seen = useApp((s) => s.settings.seenTips.includes(id));
   const markSeen = useApp((s) => s.markTipSeen);
-  if (seen) return null;
+  const showTip = useApp((s) => s.showTip);
+  if (seen) {
+    return (
+      <button className="tip-reopen" onClick={() => showTip(id)} aria-label={`Инструкция: ${TIPS[id].title}`}>
+        <Icon name="help" size={16} /> Инструкция
+      </button>
+    );
+  }
   const tip = TIPS[id];
 
   return (

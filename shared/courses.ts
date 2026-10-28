@@ -1,6 +1,6 @@
 /**
- * Платные курсы нутрициолога. Каждый курс можно купить двумя способами:
- * за рубли (Telegram Payments, нужен сервер) или за нутрики (внутренняя валюта).
+ * Курсы и персональные услуги нутрициолога. Продаются за рубли (Telegram Payments,
+ * нужен сервер); накопленные нутрики можно списать как скидку до 30% (см. shared/pricing.ts).
  * Все данные вымышлены и легко заменяются.
  */
 
@@ -9,11 +9,12 @@ const img = (id: string, w = 800) => `https://images.unsplash.com/${id}?auto=for
 export const EXPERT_PHOTO = img('photo-1594824476967-48c8b964273f', 240);
 
 export type CourseLevel = 'Начальный' | 'Средний' | 'Продвинутый';
-export type CourseCategory = 'health' | 'habits' | 'profession';
+export type CourseCategory = 'health' | 'habits' | 'personal' | 'profession';
 
 export const COURSE_CATEGORIES: Record<CourseCategory, string> = {
   health: 'Здоровье',
   habits: 'Привычки',
+  personal: 'Персонально',
   profession: 'Профессия',
 };
 
@@ -39,8 +40,6 @@ export interface CourseDef {
   outcomes: string[];
   forWhom: string[];
   priceRub: number;
-  /** Цена в нутриках — всегда priceRub × COINS_PER_RUBLE (рассчитывается автоматически). */
-  priceCoins: number;
   /** Старая цена для отображения скидки. */
   oldPriceRub?: number;
   image: string;
@@ -53,6 +52,10 @@ export interface CourseDef {
   accessDays: number;
   curator: boolean;
   badge?: string;
+  /** service — персональная услуга (консультация, разбор): вместо уроков показываются этапы. */
+  kind?: 'course' | 'service';
+  /** Формат услуги, например «Онлайн · 45 минут». */
+  format?: string;
   program: CourseSection[];
 }
 
@@ -60,10 +63,7 @@ const v = (title: string, minutes: number): CourseLesson => ({ title, minutes, k
 const p = (title: string, minutes: number): CourseLesson => ({ title, minutes, kind: 'practice' });
 const m = (title: string, minutes = 10): CourseLesson => ({ title, minutes, kind: 'material' });
 
-/** Курс в нутриках стоит в 3 раза больше, чем в рублях. */
-export const COINS_PER_RUBLE = 3;
-
-const COURSE_LIST: readonly Omit<CourseDef, 'priceCoins'>[] = [
+export const COURSES: readonly CourseDef[] = [
   {
     id: 'course-start',
     title: 'Питание без диет',
@@ -275,6 +275,135 @@ const COURSE_LIST: readonly Omit<CourseDef, 'priceCoins'>[] = [
     ],
   },
   {
+    id: 'sugar-course',
+    title: 'Сахар под контролем',
+    subtitle: 'Мини-курс · 3 видеоурока',
+    category: 'health',
+    level: 'Начальный',
+    description:
+      'Разбираемся, откуда берётся тяга к сладкому и как выстроить питание, чтобы ровнее чувствовать энергию в течение дня.',
+    outcomes: ['Поймёте, почему тянет на сладкое', 'Соберёте завтрак и перекусы без «сахарных качелей»', 'Получите рабочую тетрадь на 2 недели'],
+    forWhom: ['Тем, кто не может отказаться от сладкого', 'Тем, у кого после обеда резко падает энергия'],
+    priceRub: 1990,
+    image: img('photo-1490474418585-ba9bad8fd0ea'),
+    emoji: '🍓',
+    rating: 4.8,
+    reviews: 690,
+    students: 3120,
+    practices: 2,
+    accessDays: 60,
+    curator: false,
+    program: [
+      {
+        title: 'Мини-курс',
+        lessons: [v('Откуда берётся тяга к сладкому', 15), v('Сахарные качели и энергия', 14), v('Сладкое без чувства вины', 16), m('Рабочая тетрадь на 2 недели')],
+      },
+    ],
+  },
+  {
+    id: 'course-reset',
+    title: 'Перезагрузка 21 день',
+    subtitle: 'Групповая программа с куратором',
+    category: 'health',
+    level: 'Средний',
+    description:
+      'Флагманская программа школы: 3 недели работы над рационом, режимом и привычками в мини-группе с куратором и еженедельными эфирами.',
+    outcomes: ['Новый режим питания за 3 недели', 'Поддержка куратора и группы каждый день', 'Еженедельные эфиры с разбором вопросов'],
+    forWhom: ['Тем, кому важна поддержка и регулярность', 'Тем, кто хочет комплексно наладить питание и режим'],
+    priceRub: 14_990,
+    oldPriceRub: 19_990,
+    image: img('photo-1540189549336-e6e99c3679fe'),
+    emoji: '🌱',
+    rating: 4.9,
+    reviews: 740,
+    students: 2650,
+    practices: 9,
+    accessDays: 120,
+    curator: true,
+    badge: 'Выгодно',
+    program: [
+      {
+        title: 'Неделя 1. Питание',
+        lessons: [v('Сбалансированная тарелка', 20), p('Меню на неделю', 25), v('Эфир с куратором', 60)],
+      },
+      {
+        title: 'Неделя 2. Режим',
+        lessons: [v('Сон, вода и движение', 22), p('Трекер привычек', 15), v('Эфир с куратором', 60)],
+      },
+      {
+        title: 'Неделя 3. Закрепление',
+        lessons: [v('Как удержать результат', 18), p('Личный план на месяц', 30), v('Итоговый эфир', 60)],
+      },
+    ],
+  },
+  {
+    id: 'diet-review',
+    title: 'Разбор рациона',
+    subtitle: 'Персонально с куратором · 3 дня',
+    category: 'personal',
+    level: 'Начальный',
+    kind: 'service',
+    format: 'Чат с куратором · 3 дня',
+    description:
+      'Присылаете фото приёмов пищи 3 дня подряд — куратор даёт обратную связь и 5 конкретных рекомендаций под ваш ритм жизни.',
+    outcomes: ['Письменный разбор вашего рациона', '5 персональных рекомендаций', 'Ответы куратора на ваши вопросы'],
+    forWhom: ['Тем, кто хочет понять, что поменять в питании', 'Тем, кто готов начать с небольших шагов'],
+    priceRub: 3990,
+    image: img('photo-1547592180-85f173990554'),
+    emoji: '📋',
+    rating: 4.9,
+    reviews: 410,
+    students: 1340,
+    practices: 0,
+    accessDays: 14,
+    curator: true,
+    program: [
+      {
+        title: 'Как проходит',
+        lessons: [
+          p('Анкета о питании и целях', 10),
+          p('3 дня фото приёмов пищи в чат', 15),
+          p('Письменный разбор от куратора', 30),
+          p('Ответы на вопросы', 20),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'consultation',
+    title: 'Консультация с Анной Беловой',
+    subtitle: 'Персонально · онлайн 45 минут',
+    category: 'personal',
+    level: 'Начальный',
+    kind: 'service',
+    format: 'Онлайн-созвон · 45 минут',
+    description:
+      'Индивидуальная консультация основателя школы: разбор результатов теста, рациона и режима дня, план первых шагов.',
+    outcomes: ['Разбор ваших результатов теста', 'Рекомендации по питанию и режиму', 'План действий на 4 недели'],
+    forWhom: ['Тем, кто хочет персональный план', 'Тем, кто получил в тесте результат «Особое внимание»'],
+    priceRub: 6990,
+    image: img('photo-1490645935967-10de6ba17061'),
+    emoji: '👩‍⚕️',
+    rating: 5,
+    reviews: 380,
+    students: 960,
+    practices: 0,
+    accessDays: 30,
+    curator: true,
+    badge: 'Премиум',
+    program: [
+      {
+        title: 'Как проходит',
+        lessons: [
+          p('Анкета и результаты теста', 10),
+          p('Онлайн-консультация', 45),
+          p('План действий на 4 недели', 15),
+          p('Ответы на вопросы в чате в течение недели', 10),
+        ],
+      },
+    ],
+  },
+  {
     id: 'course-pro',
     title: 'Нутрициолог-эксперт',
     subtitle: 'Профессия за 6 месяцев',
@@ -311,8 +440,6 @@ const COURSE_LIST: readonly Omit<CourseDef, 'priceCoins'>[] = [
     ],
   },
 ];
-
-export const COURSES: readonly CourseDef[] = COURSE_LIST.map((c) => ({ ...c, priceCoins: c.priceRub * COINS_PER_RUBLE }));
 
 export const findCourse = (id: string) => COURSES.find((c) => c.id === id);
 

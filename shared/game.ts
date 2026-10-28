@@ -13,6 +13,7 @@ import {
   type LevelDef,
 } from './catalog';
 import { findCourse } from './courses';
+import { isValidCoinSpend } from './pricing';
 import { isCompleteAnswers, scoreQuiz } from './quiz';
 import type {
   ActionResult,
@@ -309,9 +310,9 @@ export function reduce(state: UserState, action: GameAction, ctx: ReduceContext)
   }
 }
 
-/** Цена в нутриках для любого товара: продукта магазина или курса. */
+/** Цена в нутриках. За нутрики продаются только материалы; курсы — за рубли со скидкой нутриками. */
 export function coinPrice(id: string): number | null {
-  return PRODUCTS.find((p) => p.id === id)?.price ?? findCourse(id)?.priceCoins ?? null;
+  return PRODUCTS.find((p) => p.id === id)?.price ?? null;
 }
 
 function assertNotOwned(state: UserState, productId: string) {
@@ -332,12 +333,19 @@ function makePurchase(productId: string, method: Purchase['method'], ctx: Reduce
 
 /**
  * Выдача курса после успешной оплаты рублями (вызывается только сервером
- * по событию successful_payment от Telegram). Повторная оплата не создаёт дубль.
+ * по событию successful_payment от Telegram). Нутрики, заявленные как скидка,
+ * списываются только сейчас — после оплаты. Повторная оплата не создаёт дубль.
  */
-export function grantPaidCourse(state: UserState, courseId: string, ctx: ReduceContext): ActionResult {
-  if (!findCourse(courseId)) throw new GameError('NOT_FOUND', 'Курс не найден');
+export function grantPaidCourse(state: UserState, courseId: string, ctx: ReduceContext, coinsSpent = 0): ActionResult {
+  const course = findCourse(courseId);
+  if (!course) throw new GameError('NOT_FOUND', 'Курс не найден');
+  if (!isValidCoinSpend(course.priceRub, coinsSpent)) throw new GameError('INVALID_ACTION', 'Некорректная скидка нутриками');
   const existing = state.purchases.find((p) => p.productId === courseId);
   if (existing) return { state, effect: { purchase: existing } };
-  const purchase = makePurchase(courseId, 'rub', ctx);
-  return { state: { ...state, purchases: [purchase, ...state.purchases] }, effect: { purchase } };
+  const purchase = { ...makePurchase(courseId, 'rub', ctx), coinsSpent };
+  const charged = Math.min(coinsSpent, state.game.balance);
+  return {
+    state: { ...state, game: { ...state.game, balance: state.game.balance - charged }, purchases: [purchase, ...state.purchases] },
+    effect: { purchase },
+  };
 }

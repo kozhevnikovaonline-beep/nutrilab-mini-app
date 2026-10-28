@@ -68,6 +68,8 @@ interface AppStore {
   refresh(): Promise<void>;
   completeOnboarding(): void;
   markTipSeen(tip: string): void;
+  /** Снова развернуть подсказку раздела (кнопка «Инструкция»). */
+  showTip(tip: string): void;
   /** Показать онбординг и подсказки на страницах заново. */
   replayOnboarding(): void;
 }
@@ -257,6 +259,10 @@ export const useApp = create<AppStore>()(
         set((s) =>
           s.settings.seenTips.includes(tip) ? s : { settings: { ...s.settings, seenTips: [...s.settings.seenTips, tip] } },
         );
+      },
+
+      showTip(tip) {
+        set((s) => ({ settings: { ...s.settings, seenTips: s.settings.seenTips.filter((t) => t !== tip) } }));
       },
 
       replayOnboarding() {

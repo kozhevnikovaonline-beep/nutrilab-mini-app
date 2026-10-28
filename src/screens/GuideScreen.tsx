@@ -216,7 +216,7 @@ export function GuideScreen() {
         <p style={{ opacity: 0.9 }} className="small">
           Гид — это первый шаг. На консультации мы разберём ваш рацион и режим и составим план под ваши цели.
         </p>
-        <button className="btn btn--lime btn--block" onClick={() => push({ name: 'product', productId: 'consultation' })}>
+        <button className="btn btn--lime btn--block" onClick={() => push({ name: 'course', courseId: 'consultation' })}>
           Узнать о консультации
         </button>
       </section>

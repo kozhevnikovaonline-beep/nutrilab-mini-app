@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BASE_MAX_ENERGY, DAILY_REWARDS, HABIT_REWARD, PRODUCTS, QUIZ_REWARD, UPGRADES } from './catalog';
-import { COURSES } from './courses';
+import { COURSES, findCourse } from './courses';
+import { coinDiscount, isValidCoinSpend, makeCoursePayload, parseCoursePayload } from './pricing';
 import { GameError, coinPrice, createInitialState, dailyStatus, grantPaidCourse, parseAction, reduce, regenEnergy } from './game';
 import { QUESTION_COUNT } from './quiz';
 import type { AnswerValue, GameAction, UserState } from './types';
@@ -133,33 +134,55 @@ describe('parseAction', () => {
   });
 });
 
-describe('курсы', () => {
-  const course = COURSES[0];
+describe('курсы: рубли + скидка нутриками', () => {
+  const course = findCourse('course-mini')!; // 7 990 ₽
 
-  it('покупаются за нутрики по цене в нутриках', () => {
-    const { state, effect } = act(rich(course.priceCoins + 1), { type: 'product/buy', productId: course.id });
-    expect(coinPrice(course.id)).toBe(course.priceCoins);
-    expect(state.game.balance).toBe(1);
-    expect(effect.purchase).toMatchObject({ productId: course.id, method: 'coins' });
-    expect(() => act(rich(course.priceCoins - 1), { type: 'product/buy', productId: course.id })).toThrow(/Не хватает/);
+  it('не продаются целиком за нутрики — только материалы', () => {
+    expect(coinPrice(course.id)).toBeNull();
+    expect(() => act(rich(1e7), { type: 'product/buy', productId: course.id })).toThrow(/не найден/);
+    expect(coinPrice(PRODUCTS[0].id)).toBe(PRODUCTS[0].price);
   });
 
-  it('выдаются после оплаты рублями без списания нутриков и без дублей', () => {
-    const start = rich(500);
-    const paid = grantPaidCourse(start, course.id, ctx());
-    expect(paid.state.game.balance).toBe(500);
-    expect(paid.effect.purchase).toMatchObject({ productId: course.id, method: 'rub' });
-    const again = grantPaidCourse(paid.state, course.id, ctx());
+  it('скидка нутриками — не больше 30% цены, 3 нутрика = 1 ₽', () => {
+    expect(coinDiscount(7990, 1e9)).toEqual({ maxRub: 2397, rub: 2397, coins: 7191, finalRub: 5593 });
+    expect(coinDiscount(7990, 1000)).toEqual({ maxRub: 2397, rub: 333, coins: 999, finalRub: 7657 });
+    expect(coinDiscount(7990, 2).rub).toBe(0);
+    expect(isValidCoinSpend(7990, 7191)).toBe(true);
+    expect(isValidCoinSpend(7990, 7194)).toBe(false); // больше 30%
+    expect(isValidCoinSpend(7990, 10)).toBe(false); // не кратно курсу обмена
+  });
+
+  it('после оплаты рублями выдаются и списывают заявленные нутрики, без дублей', () => {
+    const start = rich(10_000);
+    const paid = grantPaidCourse(start, course.id, ctx(), 7191);
+    expect(paid.state.game.balance).toBe(10_000 - 7191);
+    expect(paid.effect.purchase).toMatchObject({ productId: course.id, method: 'rub', coinsSpent: 7191 });
+    const again = grantPaidCourse(paid.state, course.id, ctx(), 7191);
     expect(again.state.purchases).toHaveLength(1);
+    expect(again.state.game.balance).toBe(paid.state.game.balance);
+    expect(grantPaidCourse(start, course.id, ctx()).state.game.balance).toBe(10_000);
+    expect(() => grantPaidCourse(start, course.id, ctx(), 9000)).toThrow(/скидка/);
     expect(() => grantPaidCourse(start, 'nope', ctx())).toThrow(/не найден/);
-    // Купленный за рубли курс нельзя купить повторно за нутрики.
-    expect(() => act({ ...paid.state, game: { ...paid.state.game, balance: 1e7 } }, { type: 'product/buy', productId: course.id })).toThrow(/уже у вас/);
   });
 
-  it('у каждого курса корректные цены и программа', () => {
+  it('payload счёта кодирует курс, пользователя и нутрики', () => {
+    const payload = makeCoursePayload({ courseId: 'course-mini', userId: 42, coins: 999 });
+    expect(parseCoursePayload(payload)).toEqual({ courseId: 'course-mini', userId: 42, coins: 999 });
+    expect(parseCoursePayload('course:x:1')).toBeNull();
+    expect(parseCoursePayload('hack')).toBeNull();
+  });
+
+  it('консультация и разбор рациона перенесены в раздел «Курсы»', () => {
+    for (const id of ['consultation', 'diet-review', 'sugar-course', 'course-reset']) {
+      expect(findCourse(id)).toBeDefined();
+      expect(PRODUCTS.find((p) => p.id === id)).toBeUndefined();
+    }
+    expect(PRODUCTS.every((p) => p.category === 'materials')).toBe(true);
+  });
+
+  it('у каждого курса корректная цена и программа', () => {
     for (const c of COURSES) {
-      expect(c.priceRub).toBeGreaterThan(0);
-      expect(c.priceCoins).toBe(c.priceRub * 3); // в нутриках ровно в 3 раза больше, чем в рублях
+      expect(Number.isInteger(c.priceRub) && c.priceRub > 0).toBe(true);
       expect(c.program.length).toBeGreaterThan(0);
       expect(c.title.length).toBeLessThanOrEqual(32); // ограничение title в счёте Telegram
     }

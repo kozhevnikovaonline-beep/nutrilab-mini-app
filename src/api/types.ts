@@ -28,10 +28,10 @@ export interface ApiClient {
   dispatch(action: GameAction): Promise<ActionResult>;
   sendLeadMagnet(): Promise<LeadMagnetDelivery>;
   /**
-   * Ссылка на счёт Telegram Payments для оплаты курса рублями.
+   * Ссылка на счёт Telegram Payments для оплаты курса рублями; useCoins — списать нутрики как скидку до 30%.
    * Есть только у реального сервера с подключённой платёжной системой.
    */
-  createInvoice?(courseId: string): Promise<{ invoiceUrl: string }>;
+  createInvoice?(courseId: string, useCoins: boolean): Promise<{ invoiceUrl: string }>;
   /** Сброс прогресса — доступен только в демо-режиме. */
   reset?(): Promise<UserState>;
 }

@@ -361,7 +361,7 @@ export function QuizResultScreen() {
             <li key={a}>{a}</li>
           ))}
         </ul>
-        <button className="btn btn--ghost btn--block" onClick={() => push({ name: 'product', productId: 'consultation' })}>
+        <button className="btn btn--ghost btn--block" onClick={() => push({ name: 'course', courseId: 'consultation' })}>
           {AFTER_RESULT.cta}
         </button>
       </section>

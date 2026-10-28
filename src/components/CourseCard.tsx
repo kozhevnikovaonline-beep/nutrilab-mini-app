@@ -1,12 +1,11 @@
 import type { CourseDef } from '@shared/courses';
 import { useApp } from '../store/appStore';
-import { formatCoins } from '../lib/format';
 import { Media } from './Media';
 import { Coin } from './Coin';
 import { Icon } from './Icon';
 import { Stars, formatRub } from './ui';
 
-/** Карточка курса: фото, название, цена в рублях и нутриках, рейтинг. */
+/** Карточка курса: фото, название, цена в рублях с пометкой о скидке нутриками, рейтинг. */
 export function CourseCard({ course, wide = false }: { course: CourseDef; wide?: boolean }) {
   const push = useApp((s) => s.push);
   const owned = useApp((s) => s.user?.purchases.some((p) => p.productId === course.id) ?? false);
@@ -27,8 +26,8 @@ export function CourseCard({ course, wide = false }: { course: CourseDef; wide?:
         <div className="small muted">{course.subtitle}</div>
         <div className="course-card__prices">
           <b>{formatRub(course.priceRub)}</b>
-          <span className="course-card__coins">
-            <Coin size={14} /> {formatCoins(course.priceCoins)}
+          <span className="course-card__discount">
+            <Coin size={12} /> −30%
           </span>
         </div>
         <Stars rating={course.rating} reviews={course.reviews} />

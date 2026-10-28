@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MAX_COIN_DISCOUNT_SHARE, coinDiscount } from '@shared/pricing';
 import { SCHOOL } from '@shared/catalog';
 import { COURSE_CATEGORIES, EXPERT_PHOTO, courseLessonCount, courseMinutes, findCourse, type CourseLesson } from '@shared/courses';
 import { useApp } from '../store/appStore';
@@ -11,21 +12,22 @@ import { Empty, MainAction, PageHead, Stars, formatRub } from '../components/ui'
 import { Media } from '../components/Media';
 import { Icon, type IconName } from '../components/Icon';
 import { Coin } from '../components/Coin';
+import { PageTip } from '../components/Onboarding';
 
 const LESSON_ICONS: Record<CourseLesson['kind'], IconName> = { video: 'play', practice: 'flag', material: 'file' };
 
 const formatDuration = (minutes: number) =>
   minutes >= 60 ? `${Math.floor(minutes / 60)} ч ${minutes % 60 ? `${minutes % 60} мин` : ''}`.trim() : `${minutes} мин`;
 
-/** Карточка курса: описание, программа и покупка за рубли или нутрики. */
+/** Карточка курса или услуги: описание, программа и оплата в рублях со скидкой нутриками до 30%. */
 export function CourseScreen({ courseId }: { courseId: string }) {
   const user = useApp((s) => s.user)!;
-  const run = useApp((s) => s.run);
   const refresh = useApp((s) => s.refresh);
   const toast = useApp((s) => s.toast);
   const pop = useApp((s) => s.pop);
-  const coinsBusy = useApp((s) => s.busy['product/buy']);
-  const [tab, setTab] = useState<'about' | 'program'>('about');
+  const setTab = useApp((s) => s.setTab);
+  const [section, setSection] = useState<'about' | 'program'>('about');
+  const [useCoins, setUseCoins] = useState(true);
   const [paying, setPaying] = useState(false);
   useBackButton(pop);
 
@@ -40,28 +42,34 @@ export function CourseScreen({ courseId }: { courseId: string }) {
   }
 
   const purchase = user.purchases.find((p) => p.productId === course.id);
-  const missingCoins = course.priceCoins - user.game.balance;
+  const isService = course.kind === 'service';
   const lessons = courseLessonCount(course);
+  const discount = coinDiscount(course.priceRub, user.game.balance);
+  const applyCoins = useCoins && discount.rub > 0;
+  const toPay = applyCoins ? discount.finalRub : course.priceRub;
   const managerText = (extra: string) => `Здравствуйте! ${extra} «${course.title}» (${SCHOOL.name}).`;
 
   /** Заявка менеджеру — когда онлайн-оплата недоступна (демо-режим или платежи не подключены). */
   const requestViaManager = async () => {
+    const discountNote = applyCoins
+      ? ` со скидкой нутриками −${formatRub(discount.rub)} (спишу ${formatCoins(discount.coins)} нутриков)`
+      : '';
     const ok = await confirmAction(
-      `Онлайн-оплата картой будет доступна после подключения платёжной системы. Сейчас менеджер пришлёт вам ссылку на оплату ${formatRub(course.priceRub)}. Написать менеджеру?`,
+      `Онлайн-оплата картой будет доступна после подключения платёжной системы. Сейчас менеджер пришлёт вам ссылку на оплату ${formatRub(toPay)}. Написать менеджеру?`,
     );
-    if (ok) openLink(links.manager(managerText(`Хочу купить курс за ${formatRub(course.priceRub)}:`)));
+    if (ok) openLink(links.manager(managerText(`Хочу купить за ${formatRub(toPay)}${discountNote}:`)));
   };
 
-  const buyRub = async () => {
+  const buy = async () => {
     if (!api.createInvoice) return requestViaManager();
     setPaying(true);
     try {
-      const { invoiceUrl } = await api.createInvoice(course.id);
+      const { invoiceUrl } = await api.createInvoice(course.id, applyCoins);
       const status = await openInvoice(invoiceUrl);
       if (status === 'paid') {
         haptic.success();
         toast('Оплата прошла! Открываем доступ…', 'success');
-        // Сервер выдаёт курс по событию successful_payment — даём ему пару секунд.
+        // Сервер выдаёт курс и списывает нутрики по событию successful_payment — даём ему пару секунд.
         await new Promise((r) => setTimeout(r, 1500));
         await refresh();
       } else if (status === 'failed') {
@@ -75,15 +83,8 @@ export function CourseScreen({ courseId }: { courseId: string }) {
     }
   };
 
-  const buyCoins = async () => {
-    const ok = await confirmAction(`Обменять ${formatCoins(course.priceCoins)} нутриков на курс «${course.title}»?`);
-    if (!ok) return;
-    const result = await run({ type: 'product/buy', productId: course.id });
-    if (result?.effect.purchase) toast('Курс ваш! 🎉', 'success');
-  };
-
   const startLearning = () =>
-    purchase && openLink(links.manager(managerText(`Я оплатил(а) курс, мой код ${purchase.code}. Откройте, пожалуйста, доступ к курсу`)));
+    purchase && openLink(links.manager(managerText(`Я оплатил(а), мой код ${purchase.code}. Откройте, пожалуйста, доступ:`)));
 
   return (
     <main className="screen screen--stack course">
@@ -99,62 +100,106 @@ export function CourseScreen({ courseId }: { courseId: string }) {
         />
 
         <div className="tabs-pills" role="tablist">
-          <button role="tab" aria-selected={tab === 'about'} onClick={() => setTab('about')}>
+          <button role="tab" aria-selected={section === 'about'} onClick={() => setSection('about')}>
             Описание
           </button>
-          <button role="tab" aria-selected={tab === 'program'} onClick={() => setTab('program')}>
-            Содержание
+          <button role="tab" aria-selected={section === 'program'} onClick={() => setSection('program')}>
+            {isService ? 'Как проходит' : 'Содержание'}
           </button>
         </div>
 
         <div>
           <h1 className="h2">{course.title}</h1>
           <p className="muted" style={{ marginTop: 4 }}>
-            {course.subtitle} · {course.level} уровень
+            {isService ? course.subtitle : `${course.subtitle} · ${course.level} уровень`}
           </p>
         </div>
 
         <div className="chips">
           <span className="chip">
-            <Icon name="users" size={15} /> {formatCoins(course.students)} {pluralize(course.students, ['ученик', 'ученика', 'учеников'])}
+            <Icon name="users" size={15} /> {formatCoins(course.students)}{' '}
+            {isService ? pluralize(course.students, ['клиент', 'клиента', 'клиентов']) : pluralize(course.students, ['ученик', 'ученика', 'учеников'])}
           </span>
-          <span className="chip">
-            <Icon name="play" size={15} /> {lessons} {pluralize(lessons, ['урок', 'урока', 'уроков'])}
-          </span>
-          <span className="chip">
-            <Icon name="flag" size={15} /> {course.practices} {pluralize(course.practices, ['практика', 'практики', 'практик'])}
-          </span>
+          {isService ? (
+            <span className="chip">
+              <Icon name="clock" size={15} /> {course.format}
+            </span>
+          ) : (
+            <>
+              <span className="chip">
+                <Icon name="play" size={15} /> {lessons} {pluralize(lessons, ['урок', 'урока', 'уроков'])}
+              </span>
+              <span className="chip">
+                <Icon name="flag" size={15} /> {course.practices} {pluralize(course.practices, ['практика', 'практики', 'практик'])}
+              </span>
+            </>
+          )}
         </div>
 
         <div className="row">
           <Stars rating={course.rating} reviews={course.reviews} />
           <span className="spacer" />
-          <span className="small muted">
-            <Icon name="clock" size={14} /> {formatDuration(courseMinutes(course))}
-          </span>
+          {!isService && (
+            <span className="small muted">
+              <Icon name="clock" size={14} /> {formatDuration(courseMinutes(course))}
+            </span>
+          )}
         </div>
+
+        <PageTip id="course" />
 
         <section className="price-box">
           <div>
-            <div className="small muted">Цена курса</div>
+            <div className="small muted">{isService ? 'Стоимость' : 'Цена курса'}</div>
             <div className="row" style={{ gap: 8, alignItems: 'baseline' }}>
               <b className="price-box__rub">{formatRub(course.priceRub)}</b>
               {course.oldPriceRub && <s className="muted small">{formatRub(course.oldPriceRub)}</s>}
             </div>
           </div>
-          <div className="price-box__or">или</div>
-          <div style={{ textAlign: 'right' }}>
-            <div className="small muted">За нутрики</div>
-            <b className="row" style={{ gap: 5, justifyContent: 'flex-end' }}>
-              <Coin size={18} /> {formatCoins(course.priceCoins)}
-            </b>
-          </div>
+          {!purchase && applyCoins && (
+            <div style={{ textAlign: 'right' }}>
+              <div className="small muted">С нутриками</div>
+              <b className="price-box__final">{formatRub(discount.finalRub)}</b>
+            </div>
+          )}
         </section>
+
+        {!purchase &&
+          (discount.rub > 0 ? (
+            <label className="coin-discount">
+              <span className="coin-discount__icon">
+                <Coin size={26} />
+              </span>
+              <span style={{ flex: 1 }}>
+                <b>
+                  Списать нутрики: <span style={{ whiteSpace: 'nowrap' }}>−{formatRub(discount.rub)}</span>
+                </b>
+                <span className="small muted" style={{ display: 'block' }}>
+                  Спишется {formatCoins(discount.coins)} из {formatCoins(user.game.balance)} · до {Math.round(MAX_COIN_DISCOUNT_SHARE * 100)}% цены
+                </span>
+              </span>
+              <input type="checkbox" className="switch" checked={useCoins} onChange={(e) => setUseCoins(e.target.checked)} />
+            </label>
+          ) : (
+            <button className="coin-discount" onClick={() => setTab('tap')}>
+              <span className="coin-discount__icon">
+                <Coin size={26} />
+              </span>
+              <span style={{ flex: 1, textAlign: 'left' }}>
+                <b>Скидка до {Math.round(MAX_COIN_DISCOUNT_SHARE * 100)}% нутриками</b>
+                <span className="small muted" style={{ display: 'block' }}>
+                  Накопите нутрики и оплатите ими до −{formatRub(discount.maxRub)}
+                </span>
+              </span>
+              <Icon name="chevron" size={18} />
+            </button>
+          ))}
 
         {purchase && (
           <section className="card card--lime stack" style={{ gap: 8 }}>
             <div className="caps" style={{ color: 'var(--green-600)' }}>
-              Курс ваш · {purchase.method === 'rub' ? 'оплачен картой' : 'обменян на нутрики'}
+              {isService ? 'Оплачено' : 'Курс ваш'} · {purchase.method === 'coins' ? 'обменян на нутрики' : 'оплачен картой'}
+              {purchase.coinsSpent ? ` · −${formatCoins(purchase.coinsSpent)} нутриков` : ''}
             </div>
             <div className="row">
               <span className="purchase-code">{purchase.code}</span>
@@ -163,7 +208,7 @@ export function CourseScreen({ courseId }: { courseId: string }) {
           </section>
         )}
 
-        {tab === 'about' ? (
+        {section === 'about' ? (
           <>
             <p className="text-2">{course.description}</p>
             <section className="card stack" style={{ gap: 12 }}>
@@ -195,17 +240,17 @@ export function CourseScreen({ courseId }: { courseId: string }) {
             </section>
           </>
         ) : (
-          course.program.map((section, i) => (
-            <section key={section.title} className="card program">
-              <div className="caps muted">Раздел {i + 1}</div>
+          course.program.map((part, i) => (
+            <section key={`${part.title}-${i}`} className="card program">
+              {!isService && <div className="caps muted">Раздел {i + 1}</div>}
               <div className="h3" style={{ marginBottom: 6 }}>
-                {section.title.replace(/^.*?\.\s/, '')}
+                {part.title.replace(/^.*?\.\s/, '')}
               </div>
-              {section.lessons.map((lesson, j) => (
-                <div key={lesson.title} className="program__lesson">
-                  <Icon name={purchase ? LESSON_ICONS[lesson.kind] : 'lock'} size={16} />
+              {part.lessons.map((lesson, j) => (
+                <div key={`${lesson.title}-${j}`} className="program__lesson">
+                  <Icon name={purchase || isService ? LESSON_ICONS[lesson.kind] : 'lock'} size={16} />
                   <span style={{ flex: 1 }}>
-                    Урок №{j + 1}: {lesson.title}
+                    {isService ? `Шаг ${j + 1}` : `Урок №${j + 1}`}: {lesson.title}
                   </span>
                   <span className="small muted">{lesson.minutes} мин</span>
                 </div>
@@ -216,20 +261,9 @@ export function CourseScreen({ courseId }: { courseId: string }) {
       </div>
 
       {purchase ? (
-        <MainAction text="Начать обучение" onClick={startLearning} />
+        <MainAction text={isService ? 'Связаться с куратором' : 'Начать обучение'} onClick={startLearning} />
       ) : (
-        <MainAction
-          tone="violet"
-          text={`Купить за ${formatRub(course.priceRub)}`}
-          onClick={buyRub}
-          loading={paying}
-          secondary={{
-            text: missingCoins > 0 ? `Не хватает ${formatCoins(missingCoins)} нутриков` : `Купить за ${formatCoins(course.priceCoins)} нутриков`,
-            onClick: buyCoins,
-            disabled: missingCoins > 0,
-            loading: coinsBusy,
-          }}
-        />
+        <MainAction tone="violet" text={`Купить за ${formatRub(toPay)}`} onClick={buy} loading={paying} />
       )}
     </main>
   );

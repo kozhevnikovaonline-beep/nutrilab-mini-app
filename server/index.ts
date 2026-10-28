@@ -78,12 +78,13 @@ async function createInvoice(userId: number, body: unknown) {
   if (!config.paymentProviderToken) {
     throw new HttpError(503, 'PAYMENTS_DISABLED', 'Онлайн-оплата пока не подключена');
   }
-  const courseId = (body as { courseId?: unknown } | null)?.courseId;
+  const { courseId, useCoins } = (body ?? {}) as { courseId?: unknown; useCoins?: unknown };
   if (typeof courseId !== 'string' || !findCourse(courseId)) throw new HttpError(404, 'NOT_FOUND', 'Курс не найден');
   if (db.get(userId)?.state.purchases.some((p) => p.productId === courseId)) {
     throw new HttpError(409, 'ALREADY_PURCHASED', 'Этот курс уже у вас');
   }
-  return { invoiceUrl: await createCourseInvoice(userId, courseId) };
+  const balance = db.get(userId)?.state.game.balance ?? 0;
+  return { invoiceUrl: await createCourseInvoice(userId, courseId, balance, useCoins === true) };
 }
 
 function authenticate(req: IncomingMessage) {

@@ -99,7 +99,8 @@ export const REFERRAL_REWARD = 1_000;
 
 // ───────────────────────── Магазин ─────────────────────────
 
-export type ProductCategory = 'materials' | 'courses' | 'personal';
+/** За нутрики продаются только материалы; курсы и персональные услуги — в shared/courses.ts. */
+export type ProductCategory = 'materials';
 
 export interface ProductDef {
   id: string;
@@ -121,8 +122,6 @@ const img = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=c
 
 export const PRODUCT_CATEGORIES: Record<ProductCategory, string> = {
   materials: 'Материалы',
-  courses: 'Курсы',
-  personal: 'Персонально',
 };
 
 export const PRODUCTS: readonly ProductDef[] = [
@@ -165,73 +164,6 @@ export const PRODUCTS: readonly ProductDef[] = [
     emoji: '🍳',
     image: img('photo-1525351484163-7529414344d8'),
     delivery: 'Ссылка на сборник придёт в чат с ботом',
-  },
-  {
-    id: 'sugar-course',
-    category: 'courses',
-    title: 'Мини-курс «Сахар под контролем»',
-    subtitle: '3 видеоурока · 45 минут',
-    description:
-      'Разбираемся, откуда берётся тяга к сладкому и как выстроить питание, чтобы ровнее чувствовать энергию в течение дня.',
-    includes: ['3 видеоурока', 'Рабочая тетрадь', 'Доступ на 60 дней'],
-    price: 6_000,
-    emoji: '🍓',
-    image: img('photo-1490474418585-ba9bad8fd0ea'),
-    delivery: 'Доступ откроет куратор по коду',
-  },
-  {
-    id: 'reset-discount',
-    category: 'courses',
-    title: '−25% на программу «Перезагрузка 21 день»',
-    subtitle: 'Групповая программа с куратором',
-    description:
-      'Скидка на флагманскую программу школы: 3 недели работы над рационом, режимом и привычками в мини-группе с куратором.',
-    includes: ['Промокод −25%', 'Действует 30 дней', 'Суммируется с рассрочкой'],
-    price: 9_000,
-    emoji: '🌱',
-    image: img('photo-1540189549336-e6e99c3679fe'),
-    badge: 'Выгодно',
-    delivery: 'Промокод активирует менеджер школы',
-  },
-  {
-    id: 'profession-discount',
-    category: 'courses',
-    title: '−15% на курс «Нутрициолог с нуля»',
-    subtitle: 'Профессия за 6 месяцев',
-    description:
-      'Скидка на профессиональное обучение с дипломом о профессиональной переподготовке и практикой на реальных кейсах.',
-    includes: ['Промокод −15%', 'Действует 30 дней', 'Бесплатный вводный урок'],
-    price: 14_000,
-    emoji: '🎓',
-    image: img('photo-1498837167922-ddd27525d352'),
-    delivery: 'Промокод активирует менеджер школы',
-  },
-  {
-    id: 'diet-review',
-    category: 'personal',
-    title: 'Разбор рациона от куратора',
-    subtitle: '3 дня сопровождения в чате',
-    description:
-      'Присылаете фото приёмов пищи 3 дня подряд — куратор даёт обратную связь и 5 конкретных рекомендаций под ваш ритм жизни.',
-    includes: ['3 дня в чате с куратором', 'Письменный разбор', '5 персональных рекомендаций'],
-    price: 12_000,
-    emoji: '📋',
-    image: img('photo-1547592180-85f173990554'),
-    delivery: 'Куратор напишет вам в Telegram',
-  },
-  {
-    id: 'consultation',
-    category: 'personal',
-    title: 'Консультация с Анной Беловой',
-    subtitle: 'Онлайн · 45 минут',
-    description:
-      'Индивидуальная консультация основателя школы: разбор результатов теста, рациона и режима дня, план первых шагов.',
-    includes: ['45 минут онлайн', 'Разбор ваших результатов теста', 'План действий на 4 недели'],
-    price: 25_000,
-    emoji: '👩‍⚕️',
-    image: img('photo-1490645935967-10de6ba17061'),
-    badge: 'Премиум',
-    delivery: 'Менеджер согласует время консультации',
   },
 ];
 

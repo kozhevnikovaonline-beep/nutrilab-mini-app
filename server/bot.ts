@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { GUIDE } from '../shared/catalog';
 import { findCourse } from '../shared/courses';
 import { GameError, grantPaidCourse } from '../shared/game';
+import { COINS_PER_RUBLE, coinDiscount, isValidCoinSpend, makeCoursePayload, parseCoursePayload } from '../shared/pricing';
 import { FOLLOW_UPS, MAX_SCORE, QUIZ_BLOCKS, QUIZ_RESULTS, QUIZ_TITLE, focusBlocks } from '../shared/quiz';
 import type { UserState } from '../shared/types';
 import { config } from './config';
@@ -180,24 +181,24 @@ export const getMe = () => call<{ id: number; username: string; first_name: stri
 
 // ───────────────────────── Оплата курсов рублями ─────────────────────────
 
-const PAYLOAD_RE = /^course:([a-z0-9-]{1,40}):(\d{1,15})$/;
-
-export function parsePayload(payload: string): { courseId: string; userId: number } | null {
-  const m = PAYLOAD_RE.exec(payload);
-  return m ? { courseId: m[1], userId: Number(m[2]) } : null;
-}
-
-/** Ссылка на счёт Telegram Payments для Mini App (WebApp.openInvoice). */
-export async function createCourseInvoice(userId: number, courseId: string): Promise<string> {
+/**
+ * Ссылка на счёт Telegram Payments для Mini App (WebApp.openInvoice).
+ * Скидка нутриками считается по серверному балансу; сами нутрики спишутся только после оплаты.
+ */
+export async function createCourseInvoice(userId: number, courseId: string, balance: number, useCoins: boolean): Promise<string> {
   const course = findCourse(courseId);
   if (!course) throw new GameError('NOT_FOUND', 'Курс не найден');
+  const discount = useCoins ? coinDiscount(course.priceRub, balance) : null;
+  const coins = discount?.coins ?? 0;
+  const amountRub = discount?.finalRub ?? course.priceRub;
+  const label = coins ? `${course.title.slice(0, 18)} (−${discount!.rub} ₽ нутриками)` : course.title.slice(0, 32);
   return call<string>('createInvoiceLink', {
     title: course.title.slice(0, 32),
     description: `${course.subtitle}. ${course.description}`.slice(0, 255),
-    payload: `course:${course.id}:${userId}`,
+    payload: makeCoursePayload({ courseId: course.id, userId, coins }),
     provider_token: config.paymentProviderToken,
     currency: 'RUB',
-    prices: [{ label: course.title.slice(0, 32), amount: course.priceRub * 100 }],
+    prices: [{ label, amount: amountRub * 100 }],
     photo_url: course.image,
     photo_width: 800,
     photo_height: 600,
@@ -221,34 +222,44 @@ interface SuccessfulPayment {
   telegram_payment_charge_id: string;
 }
 
-/** Последняя проверка перед списанием денег: курс существует, сумма и покупатель совпадают. */
+/** Последняя проверка перед списанием денег: курс, сумма со скидкой, покупатель и баланс нутриков. */
 async function handlePreCheckout(db: Db, q: PreCheckoutQuery) {
-  const parsed = parsePayload(q.invoice_payload);
+  const parsed = parseCoursePayload(q.invoice_payload);
   const course = parsed && findCourse(parsed.courseId);
+  const record = db.get(q.from.id);
   let error: string | undefined;
-  if (!parsed || !course || parsed.userId !== q.from.id) error = 'Не удалось проверить заказ. Попробуйте ещё раз из приложения.';
-  else if (q.currency !== 'RUB' || q.total_amount !== course.priceRub * 100) error = 'Цена курса изменилась. Откройте курс заново.';
-  else if (db.get(q.from.id)?.state.purchases.some((p) => p.productId === course.id)) error = 'Этот курс уже у вас.';
+  if (!parsed || !course || parsed.userId !== q.from.id || !isValidCoinSpend(course.priceRub, parsed.coins)) {
+    error = 'Не удалось проверить заказ. Попробуйте ещё раз из приложения.';
+  } else if (q.currency !== 'RUB' || q.total_amount !== (course.priceRub - parsed.coins / COINS_PER_RUBLE) * 100) {
+    error = 'Цена курса изменилась. Откройте курс заново.';
+  } else if (record?.state.purchases.some((p) => p.productId === course.id)) {
+    error = 'Этот курс уже у вас.';
+  } else if ((record?.state.game.balance ?? 0) < parsed.coins) {
+    error = 'Нутриков на балансе стало меньше. Откройте курс заново.';
+  }
   await call('answerPreCheckoutQuery', error ? { pre_checkout_query_id: q.id, ok: false, error_message: error } : { pre_checkout_query_id: q.id, ok: true });
 }
 
 async function handleSuccessfulPayment(db: Db, userId: number, payment: SuccessfulPayment) {
-  const parsed = parsePayload(payment.invoice_payload);
+  const parsed = parseCoursePayload(payment.invoice_payload);
   const record = db.get(userId);
   if (!parsed || parsed.userId !== userId || !record) {
     console.error('[pay] payment without matching user/course', userId, payment.telegram_payment_charge_id);
     return;
   }
-  const { state, effect } = grantPaidCourse(record.state, parsed.courseId, { now: Date.now(), genId: randomUUID });
+  const { state, effect } = grantPaidCourse(record.state, parsed.courseId, { now: Date.now(), genId: randomUUID }, parsed.coins);
   db.set(userId, { ...record, state });
   const course = findCourse(parsed.courseId)!;
-  console.log(`[pay] ${userId} paid ${payment.total_amount / 100} RUB for ${course.id}, charge ${payment.telegram_payment_charge_id}`);
+  console.log(
+    `[pay] ${userId} paid ${payment.total_amount / 100} RUB + ${parsed.coins} coins for ${course.id}, charge ${payment.telegram_payment_charge_id}`,
+  );
   await sendMessage(
     userId,
     [
       '✅ <b>Оплата прошла!</b>',
       '',
-      `Курс «${escapeHtml(course.title)}» теперь ваш. Код доступа: <code>${effect.purchase?.code}</code>`,
+      `«${escapeHtml(course.title)}» теперь ваш. Код доступа: <code>${effect.purchase?.code}</code>`,
+      ...(parsed.coins ? [`Скидка нутриками: −${parsed.coins / COINS_PER_RUBLE} ₽ (списано ${parsed.coins} нутриков).`] : []),
       '',
       'Куратор откроет уроки в ближайшее время. Чек об оплате придёт на почту.',
     ].join('\n'),
@@ -297,7 +308,7 @@ async function handleUpdate(db: Db, update: Update) {
       [openAppButton(WELCOME_BUTTON, 'quiz')],
     ]);
   } else if (text.startsWith('/courses')) {
-    await sendMessage(userId, '🎓 Курсы нутрициолога можно купить картой или обменять на нутрики, которые вы копите в приложении.', [
+    await sendMessage(userId, '🎓 Курсы и консультации нутрициолога оплачиваются картой, а нутриками из приложения можно оплатить до 30% цены.', [
       [openAppButton(COURSES_BUTTON, 'shop')],
     ]);
   } else {
