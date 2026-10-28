@@ -156,7 +156,12 @@ export function ShopTab() {
 
       {segment === 'bonus' && (
         <>
-          <p className="text-2 small">Полезные материалы школы — целиком за нутрики. Курсы и консультации — в разделе «Курсы» со скидкой нутриками до 30%.</p>
+          <div className="notice">
+            <span aria-hidden="true">🪙</span>
+            <span>
+              Материалы покупаются <b>только за нутрики — 100% цены</b>, оплата рублями не нужна. Скидка «1 нутрик = 1 ₽» действует только на курсы и консультации в разделе «Курсы».
+            </span>
+          </div>
           <div className="product-grid">
             {PRODUCTS.map((p) => (
               <ProductCard key={p.id} product={p} />
@@ -246,9 +251,11 @@ export function ProductScreen({ productId }: { productId: string }) {
         </div>
         <div className="row">
           <Price value={product.price} size={24} />
+          <span className="pill pill--lime">100% за нутрики</span>
           <span className="spacer" />
           {!purchase && missing > 0 && <span className="small muted">не хватает {formatCoins(missing)}</span>}
         </div>
+        {!purchase && <p className="small muted">Оплачивается только нутриками, без рублей.</p>}
 
         {purchase && (
           <section className="card card--lime stack" style={{ gap: 10 }}>

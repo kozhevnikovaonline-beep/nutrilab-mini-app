@@ -178,6 +178,12 @@ describe('курсы: рубли + скидка нутриками', () => {
       expect(PRODUCTS.find((p) => p.id === id)).toBeUndefined();
     }
     expect(PRODUCTS.every((p) => p.category === 'materials')).toBe(true);
+    // Материалы — только за нутрики: оплатить их рублями (через счёт) нельзя.
+    for (const p of PRODUCTS) {
+      expect(findCourse(p.id)).toBeUndefined();
+      expect(() => grantPaidCourse(fresh(), p.id, ctx())).toThrow(/не найден/);
+      expect(coinPrice(p.id)).toBe(p.price);
+    }
   });
 
   it('у каждого курса корректная цена и программа', () => {
