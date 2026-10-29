@@ -33,11 +33,6 @@ export function HomeScreen() {
         <BalanceChip />
       </header>
 
-      <button className="search" onClick={() => setTab('shop')} aria-label="Найти курс">
-        <Icon name="search" size={20} />
-        <span style={{ flex: 1, textAlign: 'left' }}>Найти курс или материал</span>
-      </button>
-
       <PageTip id="home" />
 
       {quiz ? (
