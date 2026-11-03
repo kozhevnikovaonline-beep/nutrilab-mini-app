@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Как Telegram-приложение помогает нутрициологу привлекать клиентов</title>
+<meta name="description" content="Кейс: мини-приложение в Telegram превращает подписчиков нутрициолога в клиентов — тест, персональный гид, бонусы и покупка консультации в один клик.">
+<meta property="og:title" content="Как Telegram-приложение помогает нутрициологу привлекать клиентов и продавать консультации">
+<meta property="og:description" content="Тест, персональный гид, бонусы и покупка консультации в один клик — без сайта, директа и ручных напоминаний.">
+<meta property="og:image" content="img/01-onboarding.png">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;700&display=swap">
+<style>
+/* Layout: статья в одну колонку ~700px, иллюстрации шире текста (до 960px). */
+:root {
+  --bg: #f6f8f3; --surface: #ffffff; --fg: #1f2a22; --muted: #5d6b61; --line: #dde5da;
+  --green: #2f9e5b; --green-soft: #e3f3e8; --violet: #7464ec; --violet-soft: #ecebff;
+  --display: "Unbounded", "Segoe UI", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121814; --surface: #1a221d; --fg: #e8efe9; --muted: #9db0a3; --line: #2b372f;
+    --green: #5fcf8a; --green-soft: #1f3327; --violet: #a49bff; --violet-soft: #26244a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--body); font-size: 18px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--violet); }
+a:focus-visible { outline: 3px solid var(--violet); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 960px; margin: 0 auto; padding-block: 48px 80px; }
+.text { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 4.6vw, 44px); line-height: 1.15; }
+h2 { font-size: clamp(22px, 3vw, 28px); line-height: 1.25; margin-top: 36px; }
+p, ul, ol { margin: 0; }
+ul, ol { padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; }
+li::marker { color: var(--green); font-weight: 700; }
+.label { align-self: flex-start; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--violet); background: var(--violet-soft); padding: 6px 14px; border-radius: 999px; }
+.byline { color: var(--muted); font-size: 15px; }
+.lead { font-size: 21px; line-height: 1.55; }
+.note { color: var(--muted); font-size: 16px; border-left: 3px solid var(--violet); padding-left: 16px; }
+figure { margin: 16px auto; max-width: 960px; display: flex; flex-direction: column; gap: 10px; }
+figure img { border-radius: 24px; background: var(--surface); }
+figcaption { font-size: 15px; color: var(--muted); text-align: center; }
+.table { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 16px; }
+th, td { text-align: left; padding: 12px 16px; vertical-align: top; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-weight: 700; background: var(--green-soft); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.cmp td:first-child { white-space: normal; color: var(--muted); font-weight: 500; }
+.cmp td:last-child { font-weight: 600; }
+.calc { background: var(--green-soft); border-radius: 16px; padding: 16px 20px; font-variant-numeric: tabular-nums; }
+.cta { margin-top: 40px; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+.btns { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; font-weight: 700; text-decoration: none; font-size: 16px; }
+.btn--main { background: var(--green); color: var(--bg); }
+.btn--ghost { border: 1.5px solid var(--violet); color: var(--violet); }
+.more { margin-top: 28px; text-align: center; font-size: 16px; }
+@media (max-width: 600px) {
+  body { font-size: 17px; }
+  .wrap { padding-block: 28px 56px; }
+  .lead { font-size: 19px; }
+  td:first-child { white-space: normal; }
+  .cta { padding: 22px 18px; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="text">
+    <span class="label">Кейс</span>
+    <h1>Как Telegram-приложение помогает нутрициологу привлекать клиентов и продавать консультации</h1>
+    <p class="byline">Оксана Кожевникова · 2 ноября 2026</p>
+    <p class="lead">Мини-приложение в Telegram превращает подписчиков нутрициолога в клиентов: человек проходит тест, получает персональный гид, возвращается за бонусами и покупает консультацию или курс в один клик — без сайта, директа и ручных напоминаний.</p>
+
+    <h2>Задача: подписчики есть, а клиентов мало</h2>
+    <p>Нутрициолог ведёт блог, публикует полезные посты, отвечает на вопросы — но до консультации доходят единицы. Между интересом к теме питания и покупкой стоят четыре барьера:</p>
+    <ul>
+      <li><b>Человек не понимает, с чего идти.</b> Он не видит своей проблемы и не знает, нужна ли ему консультация.</li>
+      <li><b>PDF-гайд скачали и забыли.</b> Лид-магнит не ведёт к следующему шагу.</li>
+      <li><b>Нет прогрева.</b> После подписки никто не напоминает о себе и не предлагает помощь.</li>
+      <li><b>Продажи вручную.</b> Заявки в директе, оплата по реквизитам, контакты теряются.</li>
+    </ul>
+    <p>Мини-приложение закрывает именно этот промежуток между контентом и продажей.</p>
+
+    <h2>Решение: вся воронка внутри Telegram</h2>
+    <p>Клиент нажимает одну кнопку в боте и дальше проходит путь сам. Нутрициолог получает тёплого клиента с результатом теста и понятным запросом.</p>
+    <ol>
+      <li><b>Контент</b> — пост, сторис, эфир или реклама со ссылкой на бота.</li>
+      <li><b>Бот</b> — приветствие с обложкой и кнопкой «Пройти тест и получить гид».</li>
+      <li><b>Онбординг</b> — 4 слайда объясняют, что даст приложение.</li>
+      <li><b>Тест</b> — 25 вопросов по 5 сферам, 1–3 минуты.</li>
+      <li><b>Результат и гид в подарок</b> — человек видит, что обсудить со специалистом.</li>
+      <li><b>Бонусы и дожимы</b> — повод вернуться и напоминания от бота.</li>
+      <li><b>Покупка</b> — консультация, курс или программа с оплатой в Telegram.</li>
+    </ol>
+  </div>
+  <figure><img src="img/01-onboarding.png" alt="Онбординг: первый слайд с тестом и слайд про курсы со скидкой нутриками" loading="lazy"><figcaption>Онбординг: тест, гид в подарок и скидка на курсы</figcaption></figure>
+  <div class="text">
+    <p>Первый вход: короткий онбординг сразу показывает выгоду — тест, гид в подарок и скидку на курсы. В каждом разделе есть подсказка «Инструкция», поэтому у клиента не возникает вопроса «а что тут делать?».</p>
+
+    <h2>Привлечение: тест как точка входа</h2>
+    <p>Тест «Что мешает вам чувствовать себя лучше?» превращает пассивного читателя в потенциального клиента с понятным запросом. Пройти тест проще, чем написать эксперту в личные сообщения, — поэтому ссылка на тест работает в шапке профиля, сторис, канале и рекламе.</p>
+  </div>
+  <figure><img src="img/02-test.png" alt="Вопрос теста и результат: 35 из 50 баллов, «Особое внимание»" loading="lazy"><figcaption>Вопрос теста и результат: 35 из 50, «Особое внимание»</figcaption></figure>
+  <div class="text">
+    <p><b>Что видит клиент:</b></p>
+    <ul>
+      <li>по одному вопросу на экране, ответ в один клик, прогресс сохраняется;</li>
+      <li>наглядный результат и сферы, которым нужно внимание: энергия, пищеварение, сон, внешность, привычки.</li>
+    </ul>
+    <p><b>Что получает нутрициолог:</b></p>
+    <ul>
+      <li>вопросы, баллы и тексты результатов по своей методике;</li>
+      <li>сегмент клиента — «хороший ресурс», «нужно внимание», «особое внимание»;</li>
+      <li>под каждый результат — своё приглашение на консультацию, в котором уже подставлены баллы клиента.</li>
+    </ul>
+    <p class="note">Тест помогает обратить внимание на привычки и не является медицинской диагностикой — это видно клиенту и снимает тревогу.</p>
+
+    <h2>Лид-магнит, который продаёт</h2>
+    <p>Вместо PDF «для всех» клиент получает персональный гид «Энергия на тарелке», собранный по его ответам. Гид живёт внутри приложения и дублируется в чат с ботом, поэтому к нему возвращаются.</p>
+  </div>
+  <figure><img src="img/03-guide.png" alt="Гид «Энергия на тарелке» и ежедневный чек-лист привычек" loading="lazy"><figcaption>Гид «Энергия на тарелке» и ежедневный чек-лист привычек</figcaption></figure>
+  <div class="text">
+    <p><b>Внутри гида:</b></p>
+    <ul>
+      <li>советы по двум сферам с самым высоким баллом в тесте;</li>
+      <li>правило тарелки и меню на 3 дня;</li>
+      <li>чек-лист привычек на каждый день, за каждую привычку — бонусные нутрики;</li>
+      <li>в конце — кнопка «Узнать о консультации».</li>
+    </ul>
+    <p>Выгода для нутрициолога: клиент начинает применять советы, замечает первые изменения и сам ищет следующий шаг — персональный план на консультации.</p>
+
+    <h2>Прогрев без ручной работы</h2>
+    <p>После теста клиент не пропадает: бот пишет сам, а бонусы дают повод открывать приложение каждый день. Нутрициологу не нужно вручную напоминать о себе.</p>
+    <div class="table"><table>
+      <thead><tr><th>Когда</th><th>Что происходит</th></tr></thead>
+      <tbody>
+        <tr><td>Сразу после теста</td><td>Бот присылает гид в чат и приглашение на консультацию</td></tr>
+        <tr><td>Через 24 часа</td><td>Напоминание о результатах и предложение составить персональный план</td></tr>
+        <tr><td>Через 48 часов</td><td>Предложение программы сопровождения</td></tr>
+        <tr><td>Каждый день</td><td>Ежедневный бонус, задания, чек-лист привычек и тапалка приносят нутрики</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <figure><img src="img/04-bonus.png" alt="Тапалка с балансом нутриков и главная с результатом теста" loading="lazy"><figcaption>Тапалка с балансом нутриков и главная с результатом теста</figcaption></figure>
+  <div class="text">
+    <p>Нутрики — бонусная валюта школы: <b>1 нутрик = 1 ₽ скидки</b>. Клиент каждый день копит скидку на курсы нутрициолога и привыкает к его бренду. За приглашённого друга начисляется 1 000 нутриков — так работает сарафанное радио.</p>
+
+    <h2>Больше покупок: витрина и оплата в один клик</h2>
+    <p>Консультации, курсы и программы нутрициолога собраны в одной витрине внутри Telegram. Клиент покупает там же, где прошёл тест, — без переходов на сайт и переписки о реквизитах.</p>
+  </div>
+  <figure><img src="img/05-courses.png" alt="Каталог курсов и покупка курса со скидкой нутриками: 7 990 ₽ → 5 593 ₽" loading="lazy"><figcaption>Каталог курсов и покупка со скидкой нутриками: 7 990 ₽ → 5 593 ₽</figcaption></figure>
+  <div class="text">
+    <p><b>Что подталкивает к покупке:</b></p>
+    <ul>
+      <li><b>Витрина как в маркетплейсе.</b> Фото, рейтинг, число учеников, вкладка «Содержание» с программой по урокам.</li>
+      <li><b>Скидка нутриками до 30%.</b> Переключатель «Списать нутрики» сразу показывает цену к оплате. Накопленную скидку хочется использовать.</li>
+      <li><b>Оплата картой в окне Telegram.</b> После оплаты клиент получает код доступа и сообщение от бота.</li>
+      <li><b>Персональные услуги рядом с курсами.</b> Разбор рациона куратором и индивидуальная консультация продаются так же просто, как курс.</li>
+    </ul>
+  </div>
+  <figure><img src="img/06-personal.png" alt="Персональные услуги в каталоге и профиль клиента" loading="lazy"><figcaption>Персональные услуги в каталоге и профиль клиента</figcaption></figure>
+  <div class="text">
+    <p class="calc">Пример расчёта: курс за 7 990 ₽ даёт максимум 2 397 ₽ скидки нутриками, клиент платит 5 593 ₽. Нутрики списываются только после успешной оплаты. Полезные материалы школы можно взять целиком за нутрики.</p>
+
+    <h2>Чем нутрициолог выделяется среди коллег</h2>
+    <p>Большинство экспертов работают с аудиторией через посты, PDF и личные сообщения. Приложение даёт клиенту современный первый опыт работы с нутрициологом ещё до покупки.</p>
+    <div class="table"><table class="cmp">
+      <thead><tr><th>Обычно</th><th>С приложением</th></tr></thead>
+      <tbody>
+        <tr><td>«Пишите в директ»</td><td>Запись и оплата в один клик</td></tr>
+        <tr><td>PDF-чек-лист для всех</td><td>Персональный результат и гид для клиента</td></tr>
+        <tr><td>Ручные напоминания</td><td>Бот пишет сам через 24 и 48 часов</td></tr>
+        <tr><td>Подписка и тишина</td><td>Клиент вовлечён в задания каждый день</td></tr>
+        <tr><td>Одинаковые офферы всем</td><td>Предложение по результату теста</td></tr>
+        <tr><td>Один из многих экспертов в ленте</td><td>Собственное приложение — статус эксперта нового уровня</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2>5 способов использовать в практике</h2>
+    <p>Одно приложение работает на несколько задач нутрициолога — от первого касания до повторных продаж.</p>
+    <ol>
+      <li><b>Заинтересованность новых клиентов.</b> Ссылка на тест в шапке профиля, канале, сторис, рекламе.</li>
+      <li><b>Прогрев к покупке.</b> Тест + серия сообщений в боте.</li>
+      <li><b>Подготовка к консультации.</b> Клиент заранее обдумает привычки и цели — встреча проходит предметнее.</li>
+      <li><b>Марафоны и курсы.</b> Бесплатные программы в самом приложении, покупка курсов.</li>
+      <li><b>Экспертный бренд.</b> Свой инструмент вместо PDF, как у всех: его можно показывать в сторис, эфирах и на странице услуг.</li>
+    </ol>
+
+    <h2>Почему Mini App, а не мобильное приложение</h2>
+    <p>Мини-приложение в Telegram дешевле в разработке и быстрее доходит до клиента, чем приложение, которое нужно скачивать из App Store или Google Play.</p>
+    <ul>
+      <li><b>Дешевле в разработке.</b> Одна версия для iPhone, Android и компьютера вместо отдельных приложений для каждой платформы.</li>
+      <li><b>Не нужно скачивать.</b> Открывается в Telegram в один клик — нет потерь на шаге установки.</li>
+      <li><b>Без регистрации.</b> Вход через аккаунт Telegram, без паролей и форм.</li>
+      <li><b>Без App Store и Google Play.</b> Не нужна публикация и модерация, обновления сразу у всех.</li>
+      <li><b>Связь с соцсетями и CRM.</b> Аудитория из соцсетей переходит в клиенты на вашу платформу: данные можно передавать в GetCourse, Prodamus, Битрикс24 или таблицу — с согласием клиента по 152-ФЗ.</li>
+    </ul>
+
+    <h2>Как измерить эффект</h2>
+    <p>Рост заявок и продаж проверяется пилотом: приложение запускается в блоге нутрициолога на ограниченный период, и на каждом шаге воронки видны цифры. Так нутрициолог понимает, что работает, и усиливает сильные места.</p>
+    <div class="table"><table>
+      <thead><tr><th>Показатель</th><th>Что показывает</th></tr></thead>
+      <tbody>
+        <tr><td>Перешли к тесту</td><td>Насколько контент привлекает внимание</td></tr>
+        <tr><td>Начали и завершили тест</td><td>Насколько удобен и интересен сценарий</td></tr>
+        <tr><td>Оставили заявку</td><td>Сколько появилось потенциальных клиентов</td></tr>
+        <tr><td>Купили услугу или курс</td><td>Как приложение влияет на продажи</td></tr>
+        <tr><td>Источник клиента</td><td>Какой канал приводит покупателей — по меткам в ссылках</td></tr>
+      </tbody>
+    </table></div>
+    <p>Учёт показателей настраивается при внедрении: данные попадают в таблицу или CRM нутрициолога.</p>
+
+    <h2>Что входит в разработку и как начать</h2>
+    <p>Приложение собирается под ключ — под бренд, методику и продукты конкретного нутрициолога:</p>
+    <ul>
+      <li>тест под вашу методику и персональный лид-магнит;</li>
+      <li>ваши курсы, программы, марафоны и консультации;</li>
+      <li>бот и сообщения воронки;</li>
+      <li>подключение оплаты;</li>
+      <li>подключение к GetCourse, Prodamus, CRM или таблице;</li>
+      <li>встраивание воронки в вашу систему продаж;</li>
+      <li>дизайн под ваш бренд;</li>
+      <li>сопровождение после запуска.</li>
+    </ul>
+    <p class="note">На скриншотах — демо-версия приложения. Попробовать её глазами клиента можно в боте <a href="https://t.me/Nutribot_testbot">@Nutribot_testbot</a>.</p>
+
+    <section class="cta">
+      <h2 style="margin-top:0">Хотите такое приложение для своей практики?</h2>
+      <p>Запишитесь на созвон: разберём ваши услуги и покажу, как встроить приложение в вашу систему продаж. Оксана Кожевникова, Telegram <a href="https://t.me/oksanakozh_tech">@oksanakozh_tech</a>.</p>
+      <div class="btns">
+        <a class="btn btn--main" href="https://t.me/Nutribot_testbot">Открыть демо</a>
+        <a class="btn btn--ghost" href="https://t.me/oksanakozh_tech">Записаться на созвон</a>
+      </div>
+    </section>
+    <p class="more"><a href="../case/">Кейс в карточках →</a></p>
+  </div>
+</main>
+</body>
+</html>
