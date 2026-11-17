@@ -30,10 +30,9 @@ export function HomeScreen() {
           </div>
           <div className="small muted">{SCHOOL.name} · {SCHOOL.tagline.toLowerCase()}</div>
         </div>
+        <PageTip id="home" />
         <BalanceChip />
       </header>
-
-      <PageTip id="home" />
 
       {quiz ? (
         <section className="hero home-result">
@@ -94,6 +93,8 @@ export function HomeScreen() {
         <Icon name={quiz ? 'chevron' : 'lock'} size={20} />
       </button>
 
+      <DailyBonus />
+
       <div className="section-head">
         <AccentTitle text="Новые" accent="курсы" />
         <button className="link" onClick={() => setTab('shop')}>
@@ -105,8 +106,6 @@ export function HomeScreen() {
           <CourseCard key={c.id} course={c} wide />
         ))}
       </div>
-
-      <DailyBonus />
 
       <div className="section-head">
         <AccentTitle text="Задания за" accent="нутрики" />

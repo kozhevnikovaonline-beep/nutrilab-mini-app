@@ -78,8 +78,7 @@ export function GuideScreen() {
 
   return (
     <main className="screen screen--stack stack">
-      <PageHead title="Ваш гид" />
-      <PageTip id="guide" />
+      <PageHead title="Ваш гид" right={<PageTip id="guide" />} />
 
       <section className="hero guide-cover">
         <span className="pill pill--glass">

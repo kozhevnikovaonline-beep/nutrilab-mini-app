@@ -32,16 +32,16 @@ export function ProfileScreen() {
 
   return (
     <main className="screen stack">
-      <PageTip id="profile" />
       <section className="hero profile-card">
-        <div className="row" style={{ gap: 14 }}>
+        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
           <Avatar profile={profile} size={64} />
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0, alignSelf: 'center' }}>
             <div className="h2" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {profile.firstName} {profile.lastName ?? ''}
             </div>
             <div className="muted small">{profile.username ? `@${profile.username}` : SCHOOL.tagline}</div>
           </div>
+          <PageTip id="profile" tone="glass" />
         </div>
         <div className="row" style={{ marginTop: 18 }}>
           <span className="pill pill--glass">

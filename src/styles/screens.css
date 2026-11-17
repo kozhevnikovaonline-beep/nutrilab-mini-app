@@ -422,10 +422,6 @@
   min-height: 100dvh;
 }
 
-.tap-screen .page-tip {
-  margin-bottom: 16px;
-}
-
 .tap-head {
   display: flex;
   flex-direction: column;
@@ -568,8 +564,61 @@
   gap: 12px;
 }
 
+/* Все блоки бустов устроены одинаково: эмодзи, название, эффект и цена стоят на одной линии */
 .boost {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   padding: 14px;
+  min-width: 0;
+}
+
+.boost__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.boost__level {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.boost__title,
+.boost__effect {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.boost__title {
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.boost__btn {
+  margin-top: 6px;
+}
+
+/* Значок «?» на экране тапалки — в правом верхнем углу, не сдвигает шапку */
+.tap-screen {
+  position: relative;
+  /* Свечение монеты шире узкого экрана — обрезаем, чтобы не было горизонтальной прокрутки */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+.tap-tip {
+  position: absolute;
+  top: calc(var(--safe-top) + 14px);
+  right: 16px;
+  z-index: 2;
 }
 
 /* ───────────────────────── Товар (бонусы за нутрики) ───────────────────────── */
@@ -688,15 +737,55 @@
 }
 
 /* ───────────────────────── Подсказки на страницах ───────────────────────── */
-.page-tip {
+/* Значок «?» — инструкция страницы всплывает при наведении или нажатии */
+.tip-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: help;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.tip-btn--soft {
+  background: var(--violet-soft);
+  color: var(--violet-600);
+}
+
+.tip-btn--glass {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.tip-btn.is-open,
+.tip-btn:hover {
+  transform: scale(1.06);
+}
+
+.tip-btn--soft.is-open {
+  background: var(--violet);
+  color: #fff;
+}
+
+.tip-pop {
+  position: fixed;
+  z-index: 80;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: min(320px, calc(100vw - 24px));
+  overflow-y: auto;
   padding: 16px;
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-sm), inset 0 0 0 2px var(--violet-soft);
-  animation: fade-in 0.35s ease both;
+  color: var(--ink);
+  box-shadow: 0 18px 40px -16px rgba(30, 40, 60, 0.45), inset 0 0 0 2px var(--violet-soft);
+  animation: fade-in 0.18s ease both;
 }
 
 .page-tip__emoji {
@@ -707,16 +796,6 @@
   border-radius: 14px;
   background: var(--violet-soft);
   font-size: 22px;
-}
-
-.page-tip__close {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  color: var(--muted);
-  background: var(--surface-2);
 }
 
 .page-tip__steps {
@@ -1058,24 +1137,6 @@
 }
 
 /* Свёрнутая подсказка: кнопка «Инструкция» открывает её снова */
-.tip-reopen {
-  align-self: flex-end;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: var(--violet-soft);
-  color: var(--violet-600);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.tap-screen .tip-reopen {
-  margin-bottom: 8px;
-}
-
 /* Скидка нутриками на экране курса */
 .price-box__final {
   font-size: 22px;
@@ -1116,4 +1177,16 @@
   background: var(--green-soft);
   padding: 2px 8px;
   border-radius: 999px;
+}
+
+/* Заголовок «Курсы нутрициолога» делит строку со значком «?» и балансом */
+.shop-title {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 359px) {
+  .shop-title {
+    font-size: 22px;
+  }
 }

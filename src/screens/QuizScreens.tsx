@@ -48,8 +48,12 @@ export function QuizTab() {
   if (quiz) {
     return (
       <main className="screen stack">
-        <PageTip id="quiz" />
-        <h1 className="h1">Тест</h1>
+        <header className="row">
+          <h1 className="h1" style={{ flex: 1 }}>
+            Тест
+          </h1>
+          <PageTip id="quiz" />
+        </header>
         <section className="card" style={{ textAlign: 'center' }}>
           <div className="caps muted">«{QUIZ_TITLE}»</div>
           <div style={{ margin: '16px 0 8px' }}>
@@ -82,33 +86,28 @@ export function QuizTab() {
 
   return (
     <main className="screen stack">
-      <PageTip id="quiz" />
       <section className="hero">
-        <span className="pill pill--glass">
-          <Coin size={16} /> +{QUIZ_REWARD} нутриков за прохождение
-        </span>
-        <h1 className="h1" style={{ marginTop: 16 }}>
+        <div className="row" style={{ alignItems: 'flex-start' }}>
+          <span className="pill pill--glass" style={{ flex: 'none' }}>
+            <Coin size={16} /> +{QUIZ_REWARD} нутриков за тест
+          </span>
+          <span className="spacer" />
+          <PageTip id="quiz" tone="glass" />
+        </div>
+        <h1 className="h1" style={{ marginTop: 14 }}>
           {QUIZ_TITLE}
         </h1>
         <p className="muted" style={{ marginTop: 8 }}>
-          {QUIZ_DURATION}
+          {QUIZ_WELCOME.short} {QUIZ_DURATION}
         </p>
         <div className="row" style={{ marginTop: 14, gap: 8, flexWrap: 'wrap' }}>
           <span className="pill pill--glass">25 вопросов</span>
           <span className="pill pill--glass">5 сфер</span>
         </div>
-      </section>
-
-      <section className="card stack" style={{ gap: 12 }}>
-        <p className="h3">{QUIZ_WELCOME.greeting}</p>
-        {QUIZ_WELCOME.paragraphs.map((p) => (
-          <p key={p} className="text-2">
-            {p}
-          </p>
-        ))}
-        <p className="text-2">
-          <b>{QUIZ_WELCOME.duration}</b>
-        </p>
+        <button className="btn btn--white btn--block" style={{ marginTop: 18 }} onClick={start}>
+          {progress > 0 ? `Продолжить тест · ${progress}/${QUESTION_COUNT}` : QUIZ_WELCOME.button}
+          <Icon name="chevron" size={18} />
+        </button>
       </section>
 
       <section className="card stack" style={{ gap: 12 }}>
@@ -117,12 +116,10 @@ export function QuizTab() {
         <div className="scale">
           {ANSWER_OPTIONS.map((o) => (
             <div key={o.value} className="scale__item">
-              <span className="scale__points">{o.value}</span>
               <span className="small">{o.label}</span>
             </div>
           ))}
         </div>
-        <p className="small text-2">{QUIZ_WELCOME.outro}</p>
       </section>
 
       <div className="block-chips">
@@ -136,13 +133,6 @@ export function QuizTab() {
       <Disclaimer>
         <b>Важно:</b> {QUIZ_WELCOME.disclaimer}
       </Disclaimer>
-
-      <MainAction
-        text={progress > 0 ? `Продолжить тест · ${progress}/${QUESTION_COUNT}` : QUIZ_WELCOME.button}
-        onClick={start}
-        shine
-        aboveTabBar
-      />
     </main>
   );
 }
@@ -229,7 +219,6 @@ export function QuizRunScreen() {
             >
               <span className="answer__dot">{selected === o.value && <Icon name="check" size={14} strokeWidth={3} />}</span>
               <span style={{ flex: 1 }}>{o.label}</span>
-              <span className="answer__points">{o.value}</span>
             </button>
           ))}
         </div>

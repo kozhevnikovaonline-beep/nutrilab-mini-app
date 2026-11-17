@@ -144,9 +144,8 @@ export function CourseScreen({ courseId }: { courseId: string }) {
               <Icon name="clock" size={14} /> {formatDuration(courseMinutes(course))}
             </span>
           )}
+          <PageTip id="course" />
         </div>
-
-        <PageTip id="course" />
 
         <section className="price-box">
           <div>

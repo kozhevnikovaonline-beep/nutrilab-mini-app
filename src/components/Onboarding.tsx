@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { QUIZ_REWARD, SCHOOL } from '@shared/catalog';
 import { EXPERT_PHOTO, courseLessonCount, findCourse } from '@shared/courses';
 import { useApp } from '../store/appStore';
@@ -262,7 +263,7 @@ const TIPS: Record<TipId, { emoji: string; title: string; steps: string[] }> = {
     steps: [
       'Здесь ваш результат теста, покупки и статистика.',
       'Пригласите друга по ссылке — получите +1 000 нутриков.',
-      'Повторить эту инструкцию можно кнопкой «Как пользоваться приложением».',
+      'Подсказки по разделам — под значком «?», а приветственные слайды можно повторить кнопкой «Как пользоваться приложением».',
     ],
   },
   guide: {
@@ -276,45 +277,110 @@ const TIPS: Record<TipId, { emoji: string; title: string; steps: string[] }> = {
   },
 };
 
-/** Карточка-подсказка «Как это работает» при первом посещении страницы. */
-export function PageTip({ id }: { id: TipId }) {
-  const seen = useApp((s) => s.settings.seenTips.includes(id));
-  const markSeen = useApp((s) => s.markTipSeen);
-  const showTip = useApp((s) => s.showTip);
-  if (seen) {
-    return (
-      <button className="tip-reopen" onClick={() => showTip(id)} aria-label={`Инструкция: ${TIPS[id].title}`}>
-        <Icon name="help" size={16} /> Инструкция
-      </button>
-    );
-  }
+/**
+ * Инструкция страницы: скрыта за значком «?» и всплывает при наведении (мышь)
+ * или по нажатию (телефон). Окно рисуется поверх страницы, поэтому его не обрезают блоки с overflow.
+ */
+export function PageTip({ id, tone = 'soft' }: { id: TipId; tone?: 'soft' | 'glass' }) {
   const tip = TIPS[id];
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [pos, setPos] = useState<CSSProperties | null>(null);
+
+  const show = () => {
+    clearTimeout(hideTimer.current);
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    // Ширина окна как в CSS (.tip-pop): не даём ему вылезти за левый край экрана.
+    const width = Math.min(320, window.innerWidth - 24);
+    const right = Math.max(12, Math.min(window.innerWidth - r.right, window.innerWidth - 12 - width));
+    const below = window.innerHeight - r.bottom;
+    // Если снизу мало места — открываем окно над значком.
+    setPos(
+      below < 280 && r.top > below
+        ? { right, bottom: window.innerHeight - r.top + 8, maxHeight: r.top - 16 }
+        : { right, top: r.bottom + 8, maxHeight: below - 16 },
+    );
+  };
+  const hide = () => setPos(null);
+  const hideSoon = () => {
+    clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(hide, 150);
+  };
+
+  useEffect(() => {
+    if (!pos) return;
+    const onDown = (e: Event) => {
+      const t = e.target as Node;
+      if (!btnRef.current?.contains(t) && !popRef.current?.contains(t)) hide();
+    };
+    document.addEventListener('pointerdown', onDown);
+    window.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('scroll', hide, true);
+      window.removeEventListener('resize', hide);
+    };
+  }, [pos]);
+
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
+
+  const onMouse = (e: ReactPointerEvent, enter: boolean) => {
+    if (e.pointerType !== 'mouse') return;
+    if (enter) show();
+    else hideSoon();
+  };
 
   return (
-    <section className="page-tip" role="note">
-      <div className="row" style={{ gap: 10 }}>
-        <span className="page-tip__emoji">{tip.emoji}</span>
-        <div style={{ flex: 1 }}>
-          <div className="caps" style={{ color: 'var(--violet-600)' }}>
-            Как это работает
-          </div>
-          <div className="h3">{tip.title}</div>
-        </div>
-        <button className="page-tip__close" onClick={() => markSeen(id)} aria-label="Закрыть подсказку">
-          <Icon name="x" size={18} />
-        </button>
-      </div>
-      <ol className="page-tip__steps">
-        {tip.steps.map((s, i) => (
-          <li key={s}>
-            <span>{i + 1}</span>
-            {s}
-          </li>
-        ))}
-      </ol>
-      <button className="btn btn--violet btn--sm btn--block" onClick={() => markSeen(id)}>
-        Понятно
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className={`tip-btn tip-btn--${tone} ${pos ? 'is-open' : ''}`}
+        aria-label={`Как это работает: ${tip.title}`}
+        aria-expanded={Boolean(pos)}
+        onPointerEnter={(e) => onMouse(e, true)}
+        onPointerLeave={(e) => onMouse(e, false)}
+        onClick={() => {
+          haptic.select();
+          if (pos) hide();
+          else show();
+        }}
+      >
+        ?
       </button>
-    </section>
+      {pos &&
+        createPortal(
+          <div
+            ref={popRef}
+            className="tip-pop"
+            role="tooltip"
+            style={pos}
+            onPointerEnter={(e) => onMouse(e, true)}
+            onPointerLeave={(e) => onMouse(e, false)}
+          >
+            <div className="row" style={{ gap: 10 }}>
+              <span className="page-tip__emoji">{tip.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="caps" style={{ color: 'var(--violet-600)' }}>
+                  Как это работает
+                </div>
+                <div className="h3">{tip.title}</div>
+              </div>
+            </div>
+            <ol className="page-tip__steps">
+              {tip.steps.map((s, i) => (
+                <li key={s}>
+                  <span>{i + 1}</span>
+                  {s}
+                </li>
+              ))}
+            </ol>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }

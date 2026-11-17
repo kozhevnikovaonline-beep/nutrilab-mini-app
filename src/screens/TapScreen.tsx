@@ -97,7 +97,9 @@ export function TapScreen() {
 
   return (
     <main className="screen tap-screen">
-      <PageTip id="tap" />
+      <div className="tap-tip">
+        <PageTip id="tap" />
+      </div>
       <div className="tap-head">
         <span className="pill">
           <Icon name="sparkle" size={14} /> {level.level.title}
@@ -172,18 +174,14 @@ export function TapScreen() {
           const key = `upgrade:${id}`;
           return (
             <div key={id} className="card boost">
-              <div className="row" style={{ gap: 10 }}>
+              <div className="boost__top">
                 <span className="list-item__icon">{def.emoji}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="list-item__title">{def.title}</div>
-                  <div className="small muted">
-                    Ур. {lvl} · {def.effectLabel(lvl)}
-                  </div>
-                </div>
+                <span className="boost__level">Ур. {lvl}</span>
               </div>
+              <div className="boost__title">{def.title}</div>
+              <div className="boost__effect small muted">{def.effectLabel(lvl)}</div>
               <button
-                className="btn btn--dark btn--sm btn--block"
-                style={{ marginTop: 12 }}
+                className="btn btn--dark btn--sm btn--block boost__btn"
                 disabled={cost === null || cost > game.balance || busy[key]}
                 onClick={() => buy(id)}
               >

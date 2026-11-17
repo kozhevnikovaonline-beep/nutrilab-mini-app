@@ -79,12 +79,11 @@ export function ShopTab() {
   return (
     <main className="screen stack">
       <header className="row">
-        <AccentTitle as="h1" className="h1" text="Курсы" accent="нутрициолога" />
+        <AccentTitle as="h1" className="h1 shop-title" text="Курсы" accent="нутрициолога" />
         <span className="spacer" />
+        <PageTip id="shop" />
         <BalanceChip />
       </header>
-
-      <PageTip id="shop" />
 
       <label className="search">
         <Icon name="search" size={20} />
